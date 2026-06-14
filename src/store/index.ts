@@ -4,6 +4,7 @@ import settingsReducer from './settingsSlice';
 import toastsReducer from './toastsSlice';
 import dialogsReducer from './dialogsSlice';
 import compressorReducer from './compressorSlice';
+import studioReducer from './studioSlice';
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     settings: settingsReducer,
     toasts: toastsReducer,
     dialogs: dialogsReducer,
+    studio: studioReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -54,3 +56,25 @@ export {
   clearAll as clearAllCompressor
 } from './compressorSlice';
 
+export {
+  selectBrandData,
+  selectBrandName,
+  selectColors,
+  selectTypography,
+  selectLogos,
+  selectExportSettings,
+  setBrandName,
+  setTagline,
+  setWebsite,
+  setDescription,
+  setLogo,
+  addColor,
+  updateColor,
+  removeColor,
+  setTypography,
+  setTypographyFontFile,
+  setLogoRules,
+  setExportSettings,
+  setSectionOrder,
+  clearDraft,
+} from './studioSlice';

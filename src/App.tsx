@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, selectFiles, uploadAndAddFiles, uploadCompressorFiles, selectCompressorFiles, setTheme } from './store';
 import { ToastManager } from './lib/util/toast';
@@ -20,6 +21,10 @@ import SettingsView from './components/SettingsView';
 import AboutView from './components/AboutView';
 import { PrivacyView } from './components/PrivacyView';
 import { MatrixRain } from './components/ui/matrix-rain';
+
+// Studio — lazy loaded so they don't impact initial bundle
+const StudioLanding = lazy(() => import('./components/studio/StudioLanding'));
+const BrandGuidelinesWizard = lazy(() => import('./components/studio/brand-guidelines/BrandGuidelinesWizard'));
 
 import './lib/css/app.scss';
 
@@ -235,65 +240,92 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div
-      className="flex flex-col min-h-screen h-full w-full overflow-x-hidden relative"
-      onDragEnter={handleDragEnter}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      {/* Easter Egg style override for April Fools */}
-      {isAprilFools && (
-        <style dangerouslySetInnerHTML={{ __html: `* { font-family: "Comic Sans MS", "Comic Sans", cursive !important; }` }} />
-      )}
+    <Routes>
+      {/* ── Studio Routes (full-page, no tool chrome) ── */}
+      <Route
+        path="/studio"
+        element={
+          <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-foreground font-mono text-sm">Loading Studio...</div>}>
+            <StudioLanding />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/studio/brand-guidelines"
+        element={
+          <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-foreground font-mono text-sm">Loading Brand Guidelines...</div>}>
+            <BrandGuidelinesWizard />
+          </Suspense>
+        }
+      />
 
-      {/* Easter Egg Full Screen CRT Overlay */}
-      {easterEggMessage && (
-        <div className="crt-overlay">
-          <div className="crt-glitch-text">
-            🎮 Retro Mode Unlocked! 🎮
+      {/* ── Existing Tool Views ── */}
+      <Route
+        path="*"
+        element={
+          <div
+            className="flex flex-col min-h-screen h-full w-full overflow-x-hidden relative"
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            {/* Easter Egg style override for April Fools */}
+            {isAprilFools && (
+              <style dangerouslySetInnerHTML={{ __html: `* { font-family: "Comic Sans MS", "Comic Sans", cursive !important; }` }} />
+            )}
+
+            {/* Easter Egg Full Screen CRT Overlay */}
+            {easterEggMessage && (
+              <div className="crt-overlay">
+                <div className="crt-glitch-text">
+                  🎮 Retro Mode Unlocked! 🎮
+                </div>
+                <div className="crt-sub-text">
+                  &gt;&gt;&gt; {easterEggMessage} &lt;&lt;&lt;
+                </div>
+              </div>
+            )}
+
+            {/* Drag Zone Blur Overlay */}
+            {dropping && (
+              <div
+                className={`fixed inset-0 w-screen h-screen opacity-40 dark:opacity-20 z-[100] pointer-events-none blur-2xl transition-all duration-300 ${
+                  effects ? 'dragoverlay' : 'bg-accent'
+                }`}
+              />
+            )}
+
+            {/* Header / Brand & Navigation */}
+            <div className="w-full px-4 pt-4 md:pt-6 flex justify-center">
+              <FloatingHeader currentView={view} onViewChange={setView} />
+            </div>
+
+            {/* Page Content Area */}
+            <div className="flex-grow pb-16 pt-4 md:pt-6 flex flex-col justify-start">
+              {renderView()}
+            </div>
+
+            {/* Toasts and Dialogs */}
+            <Toasts />
+            <Dialogs />
+
+            {/* Footer */}
+            <div>
+              <Footer onViewChange={setView} />
+            </div>
+
+            {/* Dynamic Animated background gradients */}
+            <Gradients currentView={view} />
+
+            {/* Matrix falling code effect */}
+            {theme === 'matrix' && effects && <MatrixRain />}
           </div>
-          <div className="crt-sub-text">
-            &gt;&gt;&gt; {easterEggMessage} &lt;&lt;&lt;
-          </div>
-        </div>
-      )}
-
-      {/* Drag Zone Blur Overlay */}
-      {dropping && (
-        <div
-          className={`fixed inset-0 w-screen h-screen opacity-40 dark:opacity-20 z-[100] pointer-events-none blur-2xl transition-all duration-300 ${
-            effects ? 'dragoverlay' : 'bg-accent'
-          }`}
-        />
-      )}
-
-      {/* Header / Brand & Navigation */}
-      <div className="w-full px-4 pt-4 md:pt-6 flex justify-center">
-        <FloatingHeader currentView={view} onViewChange={setView} />
-      </div>
-
-      {/* Page Content Area */}
-      <div className="flex-grow pb-16 pt-4 md:pt-6 flex flex-col justify-start">
-        {renderView()}
-      </div>
-
-      {/* Toasts and Dialogs */}
-      <Toasts />
-      <Dialogs />
-
-      {/* Footer */}
-      <div>
-        <Footer onViewChange={setView} />
-      </div>
-
-      {/* Dynamic Animated background gradients */}
-      <Gradients currentView={view} />
-
-      {/* Matrix falling code effect */}
-      {theme === 'matrix' && effects && <MatrixRain />}
-    </div>
+        }
+      />
+    </Routes>
   );
 };
 
 export default App;
+

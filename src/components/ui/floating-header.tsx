@@ -1,9 +1,10 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { selectFiles } from '../../store/filesSlice';
 import { selectCompressorFiles } from '../../store/compressorSlice';
 import { setTheme, RootState } from '../../store';
-import { Menu as MenuIcon, Sun as SunIcon, Moon as MoonIcon, Gamepad2 as GamepadIcon, Terminal as TerminalIcon } from 'lucide-react';
+import { Menu as MenuIcon, Sun as SunIcon, Moon as MoonIcon, Gamepad2 as GamepadIcon, Terminal as TerminalIcon, FlaskConical as StudioIcon } from 'lucide-react';
 import { Sheet, SheetContent, SheetFooter } from './sheet';
 import { Button, buttonVariants } from './button';
 import { Logo } from '../Logo';
@@ -21,6 +22,9 @@ export function FloatingHeader({ currentView, onViewChange }: FloatingHeaderProp
   const compressorFiles = useSelector(selectCompressorFiles);
   const theme = useSelector((state: RootState) => state.settings.theme);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isStudioRoute = location.pathname.startsWith('/studio');
 
   const handleThemeToggle = () => {
     const cycle: ('light' | 'dark' | 'gameboy' | 'matrix')[] = ['light', 'dark', 'gameboy', 'matrix'];
@@ -33,15 +37,24 @@ export function FloatingHeader({ currentView, onViewChange }: FloatingHeaderProp
       id: 'converter',
       label: 'Converter',
       badge: converterFiles.length > 0 ? converterFiles.length : undefined,
+      isRoute: false,
     },
     {
       id: 'compressor',
       label: 'Compressor',
       badge: compressorFiles.length > 0 ? compressorFiles.length : undefined,
+      isRoute: false,
     },
     {
       id: 'settings',
       label: m["navbar.settings"](),
+      isRoute: false,
+    },
+    {
+      id: 'studio',
+      label: 'Studio',
+      isRoute: true,
+      route: '/studio',
     },
   ];
 
@@ -66,17 +79,26 @@ export function FloatingHeader({ currentView, onViewChange }: FloatingHeaderProp
         {/* Center: Desktop Links */}
         <div className="hidden lg:flex items-center gap-2">
           {links.map((link) => {
-            const isActive = currentView === link.id;
+            const isActive = link.isRoute
+              ? isStudioRoute
+              : currentView === link.id && !isStudioRoute;
             return (
               <button
                 key={link.id}
-                onClick={() => onViewChange(link.id)}
+                onClick={() => {
+                  if (link.isRoute && link.route) {
+                    navigate(link.route);
+                  } else {
+                    onViewChange(link.id);
+                  }
+                }}
                 className={cn(
                   buttonVariants({
                     variant: isActive ? 'secondary' : 'ghost',
                     size: 'default',
                   }),
                   'relative cursor-pointer rounded-none font-bold text-lg lg:text-xl px-4 lg:px-5',
+                  link.id === 'studio' && 'border border-separator ml-1',
                 )}
               >
                 <span>{link.label}</span>
@@ -130,12 +152,18 @@ export function FloatingHeader({ currentView, onViewChange }: FloatingHeaderProp
             >
               <div className="grid gap-y-3 overflow-y-auto px-2 pt-16 pb-5">
                 {links.map((link) => {
-                  const isActive = currentView === link.id;
+                  const isActive = link.isRoute
+                    ? isStudioRoute
+                    : currentView === link.id && !isStudioRoute;
                   return (
                     <button
                       key={link.id}
                       onClick={() => {
-                        onViewChange(link.id);
+                        if (link.isRoute && link.route) {
+                          navigate(link.route);
+                        } else {
+                          onViewChange(link.id);
+                        }
                         setOpen(false);
                       }}
                       className={cn(
