@@ -74,10 +74,11 @@
 }
 
 .studio-landing__title {
-  font-size: clamp(40px, 6vw, 56px);
+  font-family: var(--font-heading, 'Geist', sans-serif);
+  font-size: clamp(40px, 6vw, 64px);
   font-weight: 900;
-  letter-spacing: -2px;
-  line-height: 1.02;
+  letter-spacing: -0.04em;
+  line-height: 1.0;
   color: var(--fg, #ececee);
   margin: 0 0 16px;
   text-wrap: balance;
@@ -165,19 +166,19 @@
   font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  padding: 3px 8px;
+  letter-spacing: 0.1em;
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
 .studio-status-pill--available {
   color: var(--accent, #e8342b);
-  border: 1px solid color-mix(in srgb, var(--accent, #e8342b) 30%, transparent);
-  background: color-mix(in srgb, var(--accent, #e8342b) 8%, transparent);
+  background: color-mix(in srgb, var(--accent, #e8342b) 12%, transparent);
 }
 
 .studio-status-pill--soon {
   color: var(--fg-muted, #55555f);
-  border: 1px solid var(--bg-separator, #252529);
+  background: var(--bg-separator, #252529);
 }
 
 .studio-tool-card__body {
@@ -207,19 +208,20 @@
   justify-content: flex-end;
 }
 
-.studio-cta-btn {
-  background: var(--accent, #e8342b);
-  color: #fff;
-  border: none;
-  font-size: 12px;
+.studio-subtle-cta {
+  color: var(--fg-muted, #8c8c99);
+  font-size: 13px;
   font-weight: 600;
-  padding: 8px 16px;
-  cursor: pointer;
-  transition: background-color 120ms ease;
   font-family: var(--font-body, 'Geist', sans-serif);
+  display: inline-flex;
+  align-items: center;
+  transition: color 160ms ease, transform 160ms cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.studio-cta-btn:hover { background: var(--accent-alt, #ff5047); }
+.studio-tool-card--available:hover .studio-subtle-cta {
+  color: var(--accent, #e8342b);
+  transform: translateX(4px);
+}
 
 /* ── Wizard Shell ────────────────────────────────────────────────────────── */
 

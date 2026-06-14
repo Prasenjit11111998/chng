@@ -1,6 +1,5 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { cn } from '@/lib/utils';
 
 export type ToolStatus = 'available' | 'coming-soon';
 
@@ -12,16 +11,15 @@ interface ToolCardProps {
   icon?: React.ReactNode;
 }
 
-export const ToolCard: React.FC<ToolCardProps> = ({ name, description, status, route, icon }) => {
+export const ToolCard: React.FC<ToolCardProps> = ({ name, description, status, route }) => {
   const navigate = useNavigate();
   const isAvailable = status === 'available';
 
   return (
     <div
-      className={cn(
-        'studio-tool-card',
-        isAvailable ? 'studio-tool-card--available' : 'studio-tool-card--soon',
-      )}
+      className={`bg-panel border p-6 flex flex-col gap-0 min-h-[160px] pixel-box relative group ${
+        isAvailable ? 'border-separator cursor-pointer hover:bg-panel-highlight' : 'border-separator opacity-50 cursor-default'
+      }`}
       onClick={() => isAvailable && route && navigate(route)}
       role={isAvailable ? 'button' : undefined}
       tabIndex={isAvailable ? 0 : undefined}
@@ -33,43 +31,25 @@ export const ToolCard: React.FC<ToolCardProps> = ({ name, description, status, r
       }}
       aria-label={isAvailable ? `Open ${name}` : `${name} — coming soon`}
     >
-      {/* Status pill — top-right */}
-      <div className="studio-tool-card__status">
-        <span className={cn(
-          'studio-status-pill',
-          isAvailable ? 'studio-status-pill--available' : 'studio-status-pill--soon',
-        )}>
+      {/* Status pill */}
+      <div className="absolute top-5 right-5">
+        <span className={`font-mono text-[9px] uppercase tracking-widest px-2 py-1 ${
+          isAvailable ? 'text-accent' : 'text-muted'
+        }`}>
           {isAvailable ? 'Available' : 'Coming Soon'}
         </span>
       </div>
 
-      {/* Icon (optional) */}
-      {icon && (
-        <div className="studio-tool-card__icon">
-          {icon}
-        </div>
-      )}
-
-      {/* Name + description */}
-      <div className="studio-tool-card__body">
-        <h3 className="studio-tool-card__name">{name}</h3>
-        <p className="studio-tool-card__description">{description}</p>
+      <div className="flex-1 mt-2 pr-20">
+        <h3 className="text-lg font-bold text-foreground mb-2">{name}</h3>
+        <p className="text-sm text-muted leading-relaxed">{description}</p>
       </div>
 
-      {/* CTA — bottom-right, available only */}
       {isAvailable && route && (
-        <div className="studio-tool-card__footer">
-          <button
-            className="studio-cta-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(route);
-            }}
-            tabIndex={-1}
-            aria-hidden="true"
-          >
+        <div className="mt-4 flex justify-end overflow-hidden">
+          <span className="text-sm font-bold text-muted group-hover:text-accent font-body transition-transform transform translate-x-2 group-hover:translate-x-0">
             Open Tool →
-          </button>
+          </span>
         </div>
       )}
     </div>

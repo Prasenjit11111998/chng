@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Logo } from '../../Logo';
+import '../../../lib/css/studio.css';
 
 interface WizardStep {
   id: number;
@@ -42,18 +43,27 @@ export const WizardShell: React.FC<WizardShellProps> = ({
   return (
     <div className="wizard-shell">
       {/* ── Top nav bar ── */}
-      <div className="wizard-topbar">
-        <button
-          className="wizard-topbar__back"
-          onClick={() => navigate('/studio')}
-          aria-label="Back to Studio"
-        >
-          <Logo className="text-on-accent text-xl font-black" />
-          <span className="wizard-topbar__breadcrumb">
-            <span className="wizard-topbar__sep">›</span>
-            Brand Guidelines
-          </span>
-        </button>
+      <div className="wizard-topbar border-b border-separator">
+        <div className="flex items-center gap-4">
+          <button
+            className="bg-accent text-on-accent border-none px-5 py-2 cursor-pointer flex flex-shrink-0 items-center justify-center hover:opacity-90 pixel-btn"
+            onClick={() => navigate('/')}
+            aria-label="Go back to home"
+          >
+            <Logo className="text-3xl lg:text-4xl font-black" />
+          </button>
+
+          <div className="flex items-center text-sm font-mono px-3 py-1 bg-panel-highlight pixel-box h-full">
+            <button
+              onClick={() => navigate('/studio')}
+              className="text-muted hover:text-foreground cursor-pointer bg-transparent border-none p-0 font-mono transition-colors"
+            >
+              Studio
+            </button>
+            <span className="text-separator mx-2">/</span>
+            <span className="text-foreground">Brand Guidelines</span>
+          </div>
+        </div>
 
         <div className="wizard-topbar__right">
           {draftSaved && (
