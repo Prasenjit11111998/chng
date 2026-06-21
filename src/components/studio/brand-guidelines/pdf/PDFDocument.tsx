@@ -31,9 +31,6 @@ const SP = {
   xxl: 96,
 };
 
-// Left accent binder edge — consistent across all interior pages
-const ACCENT_BAR = 16;
-
 // ─── Resolved Fonts Prop ──────────────────────────────────────────────────────
 
 export interface ResolvedFonts {
@@ -65,13 +62,6 @@ function makeStyles(theme: PDFTheme, fonts: ResolvedFonts) {
       backgroundColor: theme.pageBackground,
       flexDirection: 'row',
       fontFamily: fonts.body,
-    },
-
-    // ── Accent bar (left edge of pages) ────────────────────────
-    accentBar: {
-      width: ACCENT_BAR,
-      backgroundColor: theme.accent,
-      flexShrink: 0,
     },
 
     // ── Columns ─────────────────────────────────────────────────
@@ -143,21 +133,6 @@ function makeStyles(theme: PDFTheme, fonts: ResolvedFonts) {
       lineHeight: 1.6,
     },
 
-    // ── Hairline rule ────────────────────────────────────────────
-    rule: {
-      height: 1,
-      backgroundColor: theme.ruleColor,
-      marginBottom: SP.md,
-      marginTop: SP.xs,
-    },
-    accentRule: {
-      height: 2,
-      backgroundColor: theme.accent,
-      width: 32,
-      marginBottom: SP.md,
-      marginTop: SP.sm,
-    },
-
     // ── Page number ─────────────────────────────────────────────
     pageNum: {
       position: 'absolute',
@@ -174,9 +149,9 @@ function makeStyles(theme: PDFTheme, fonts: ResolvedFonts) {
     sectionHeader: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: SP.lg,
-      paddingTop: SP.lg,
-      paddingBottom: SP.md,
+      paddingHorizontal: SP.xl,
+      paddingTop: SP.xl,
+      paddingBottom: SP.lg,
     },
 
     // ── Logo contained display ───────────────────────────────────
@@ -259,9 +234,6 @@ function PDFCover({
           {data.brandName || 'Brand Name'}
         </Text>
 
-        {/* Accent rule */}
-        <View style={styles.accentRule} />
-
         {/* Tagline */}
         {data.tagline && (
           <Text style={[styles.tagline, { marginBottom: SP.lg }]}>
@@ -271,7 +243,6 @@ function PDFCover({
 
         {/* Bottom metadata row */}
         <View style={{ position: 'absolute', bottom: SP.lg, left: SP.lg, right: SP.lg }}>
-          <View style={{ height: 1, backgroundColor: theme.ruleColor, marginBottom: SP.xs }} />
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={styles.muted}>Brand Guidelines</Text>
             {data.website && <Text style={styles.muted}>{data.website}</Text>}
@@ -293,8 +264,6 @@ function PDFAbout({
   return (
     <Page size={[PAGE_W, PAGE_H]} style={{ backgroundColor: theme.pageBackground, flexDirection: 'row' }}>
 
-      {/* Accent bar */}
-      <View style={styles.accentBar} />
 
       {/* ── Left sidebar: big section label ── */}
       <View style={{
@@ -330,7 +299,6 @@ function PDFAbout({
       {/* ── Right: description ── */}
       <View style={{ flex: 1, padding: SP.lg, flexDirection: 'column', justifyContent: 'center' }}>
         <Text style={styles.eyebrow}>Overview</Text>
-        <View style={styles.accentRule} />
         <Text style={[styles.body, { fontSize: 12, lineHeight: 2.0, marginBottom: SP.md }]}>
           {data.description || 'Brand description not provided.'}
         </Text>
@@ -365,13 +333,8 @@ function PDFLogoSystem({
 
       {/* ── Section header ── */}
       <View style={styles.sectionHeader}>
-        <View style={styles.accentBar} />
-        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', paddingLeft: SP.md }}>
-          <Text style={[styles.h2, { flex: 1 }]}>Logo System</Text>
-          <Text style={styles.eyebrow}>02</Text>
-        </View>
+        <Text style={styles.h2}>Logo System</Text>
       </View>
-      <View style={{ height: 1, backgroundColor: theme.ruleColor, marginHorizontal: SP.lg }} />
 
       {/* ── Logo grid — equal-width cells ── */}
       <View style={{ flex: 1, flexDirection: 'row' }}>
@@ -386,8 +349,6 @@ function PDFLogoSystem({
                 flexDirection: 'column',
                 justifyContent: 'center',
                 alignItems: 'center',
-                borderLeftWidth: i > 0 ? 1 : 0,
-                borderLeftColor: theme.ruleColor,
                 paddingHorizontal: SP.md,
                 paddingVertical: SP.lg,
               }}
@@ -437,13 +398,8 @@ function PDFColorPalette({
     return (
       <Page size={[PAGE_W, PAGE_H]} style={{ backgroundColor: theme.pageBackground, flexDirection: 'column' }}>
         <View style={styles.sectionHeader}>
-          <View style={styles.accentBar} />
-          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', paddingLeft: SP.md }}>
-            <Text style={[styles.h2, { flex: 1 }]}>Color Palette</Text>
-            <Text style={styles.eyebrow}>03</Text>
-          </View>
+          <Text style={styles.h2}>Color Palette</Text>
         </View>
-        <View style={{ height: 1, backgroundColor: theme.ruleColor, marginHorizontal: SP.lg, marginBottom: SP.md }} />
         <Text style={[styles.muted, { marginHorizontal: SP.lg }]}>No colors defined.</Text>
         <Text style={styles.pageNum}>03</Text>
       </Page>
@@ -454,13 +410,8 @@ function PDFColorPalette({
     <Page size={[PAGE_W, PAGE_H]} style={{ backgroundColor: theme.pageBackground, flexDirection: 'column' }}>
       {/* ── Section header ── */}
       <View style={styles.sectionHeader}>
-        <View style={styles.accentBar} />
-        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', paddingLeft: SP.md }}>
-          <Text style={[styles.h2, { flex: 1 }]}>Color Palette</Text>
-          <Text style={styles.eyebrow}>03</Text>
-        </View>
+        <Text style={styles.h2}>Color Palette</Text>
       </View>
-      <View style={{ height: 1, backgroundColor: theme.ruleColor, marginHorizontal: SP.lg }} />
 
       {/* ── Full-bleed color columns ── */}
       <View style={{ flex: 1, flexDirection: 'row' }}>
@@ -478,16 +429,8 @@ function PDFColorPalette({
                 flexDirection: 'column',
                 justifyContent: 'flex-end',
                 padding: SP.md,
-                borderLeftWidth: i > 0 ? 1 : 0,
-                borderLeftColor: 'rgba(0,0,0,0.08)',
               }}
             >
-              {/* Small color bar at top */}
-              <View style={{
-                position: 'absolute', top: 0, left: 0, right: 0, height: 4,
-                backgroundColor: txtColor === '#111111' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.15)'
-              }} />
-
               <Text style={{
                 fontFamily: styles.h3.fontFamily,
                 fontSize: 14,
@@ -523,13 +466,8 @@ function PDFTypography({
     <Page size={[PAGE_W, PAGE_H]} style={{ backgroundColor: theme.pageBackground, flexDirection: 'column' }}>
       {/* ── Section header ── */}
       <View style={styles.sectionHeader}>
-        <View style={styles.accentBar} />
-        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', paddingLeft: SP.md }}>
-          <Text style={[styles.h2, { flex: 1 }]}>Typography</Text>
-          <Text style={styles.eyebrow}>04</Text>
-        </View>
+        <Text style={styles.h2}>Typography</Text>
       </View>
-      <View style={{ height: 1, backgroundColor: theme.ruleColor, marginHorizontal: SP.lg }} />
 
       {/* ── Two-column type display ── */}
       <View style={{ flex: 1, flexDirection: 'row' }}>
@@ -539,8 +477,6 @@ function PDFTypography({
           flex: 1,
           padding: SP.md,
           paddingTop: SP.sm,
-          borderRightWidth: 1,
-          borderRightColor: theme.ruleColor,
           flexDirection: 'column',
           justifyContent: 'space-between',
         }}>
@@ -643,13 +579,8 @@ function PDFApplications({
     <Page size={[PAGE_W, PAGE_H]} style={{ backgroundColor: theme.pageBackground, flexDirection: 'column' }}>
       {/* ── Section header ── */}
       <View style={styles.sectionHeader}>
-        <View style={styles.accentBar} />
-        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', paddingLeft: SP.md }}>
-          <Text style={[styles.h2, { flex: 1 }]}>Brand Applications</Text>
-          <Text style={styles.eyebrow}>05</Text>
-        </View>
+        <Text style={styles.h2}>Brand Applications</Text>
       </View>
-      <View style={{ height: 1, backgroundColor: theme.ruleColor, marginHorizontal: SP.lg }} />
 
       {/* ── Two mockup panels ── */}
       <View style={{ flex: 1, flexDirection: 'row', padding: SP.lg, paddingTop: SP.md, gap: SP.md }}>
@@ -777,13 +708,8 @@ function PDFLogoRules({
     <Page size={[PAGE_W, PAGE_H]} style={{ backgroundColor: theme.pageBackground, flexDirection: 'column' }}>
       {/* ── Section header ── */}
       <View style={styles.sectionHeader}>
-        <View style={styles.accentBar} />
-        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', paddingLeft: SP.md }}>
-          <Text style={[styles.h2, { flex: 1 }]}>Logo Usage Rules</Text>
-          <Text style={styles.eyebrow}>06</Text>
-        </View>
+        <Text style={styles.h2}>Logo Usage Rules</Text>
       </View>
-      <View style={{ height: 1, backgroundColor: theme.ruleColor, marginHorizontal: SP.lg }} />
 
       {/* ── Do / Don't columns ── */}
       <View style={{ flex: 1, flexDirection: 'row' }}>
@@ -793,8 +719,6 @@ function PDFLogoRules({
           flex: 1,
           backgroundColor: doBg,
           padding: SP.md,
-          borderRightWidth: 1,
-          borderRightColor: theme.ruleColor,
         }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SP.md }}>
             <View style={{

@@ -13,9 +13,10 @@ const STUDIO_TOOLS = [
   },
   {
     id: 'logo-grid',
-    name: 'Logo Grid',
-    description: 'Clean logo grids for brand books.',
-    status: 'coming-soon' as const,
+    name: 'Logo Grid Designer',
+    description: 'Build professional logo construction grids with golden ratio, Fibonacci spiral, clearspace zones, and export to PNG or SVG.',
+    status: 'available' as const,
+    route: '/studio/logo-grid',
   },
   {
     id: 'logo-export',

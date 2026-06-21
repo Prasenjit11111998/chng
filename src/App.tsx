@@ -22,9 +22,9 @@ import AboutView from './components/AboutView';
 import { PrivacyView } from './components/PrivacyView';
 import { MatrixRain } from './components/ui/matrix-rain';
 
-// Studio — lazy loaded so they don't impact initial bundle
 const StudioLanding = lazy(() => import('./components/studio/StudioLanding'));
 const BrandGuidelinesWizard = lazy(() => import('./components/studio/brand-guidelines/BrandGuidelinesWizard'));
+const LogoGridTool = lazy(() => import('./components/studio/logo-grid/LogoGridTool'));
 
 import './lib/css/app.scss';
 
@@ -255,6 +255,14 @@ export const App: React.FC = () => {
         element={
           <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-foreground font-mono text-sm">Loading Brand Guidelines...</div>}>
             <BrandGuidelinesWizard />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/studio/logo-grid"
+        element={
+          <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-foreground font-mono text-sm">Loading Logo Grid Designer...</div>}>
+            <LogoGridTool />
           </Suspense>
         }
       />

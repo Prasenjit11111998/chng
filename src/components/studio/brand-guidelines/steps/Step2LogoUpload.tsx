@@ -18,7 +18,7 @@ const LOGO_SLOTS: { key: LogoKey; label: string; required: boolean; bg: string; 
     label: 'Dark Logo',
     required: false,
     bg: '#f5f5f5',
-    description: 'Dark version for use on light / white backgrounds',
+    description: 'Dark version for use on light backgrounds',
   },
   {
     key: 'light',
