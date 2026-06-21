@@ -34,6 +34,17 @@ Chng is a premium, client-side, local-first image processing toolkit. It enables
   - Reduces quality by `8%` per iteration, and drops scale by `5%` if quality drops below `15%`, until the target file size is reached or limits (`scale < 20%` or `quality < 10%`) are hit.
 - **Format Automatic Fallbacks**: PNG, BMP, and GIF are converted to JPEG to support lossy compression limits.
 
+### 3. Studio Toolkit (Design Tools)
+- **Brand Guidelines**: Procedurally generate sleek, responsive brand guidelines boards. Upload a logo, pick a brand personality, and generate curated typography and color palettes (using OKLCH).
+- **Logo Grid Designer**: A designer-grade tool to overlay geometric composition grids on logos. 
+  - Supports **Standard Grid**, **Golden Ratio (Phi)** divisions, and true **Golden Spiral** (nested Fibonacci rectangles).
+  - High-res vector exports (PNG and transparent SVG).
+- **Mockup Generator**: An impeccable, local-first mockup generator.
+  - Generates top-tier photographic-quality Flat 2D mockups without any network uploads.
+  - **Award-Winning Styles**: Choose between **Floating Glass Card** (a sleek floating pane with a 1px glass rim and massive drop shadow), **Safari Window**, and **Clay Mobile** (a sleek solid-color iPhone silhouette with deep inner bevels).
+  - **Custom Backgrounds**: Upload your own background images and perfectly map them with Cover, Contain, or Tile fit modes, or use the procedural editorial meshes.
+  - Exports to 4K or Transparent PNG.
+
 ---
 
 ## 🏗 Architecture

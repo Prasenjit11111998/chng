@@ -197,7 +197,10 @@ export const GridCanvas = forwardRef<GridCanvasHandle, GridCanvasProps>(
     // ── Imperative handle (export actions) ───────────────────────────────────
 
     useImperativeHandle(ref, () => ({
-      getLogoMetrics: () => metricsRef.current,
+      getLogoMetrics: () => {
+        const m = metricsRef.current;
+        return { cx: m.logoCx, cy: m.logoCy, drawW: m.logoDrawW, drawH: m.logoDrawH };
+      },
 
       downloadPNG(transparent = false) {
         const canvas = canvasRef.current;

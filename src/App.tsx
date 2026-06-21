@@ -25,6 +25,7 @@ import { MatrixRain } from './components/ui/matrix-rain';
 const StudioLanding = lazy(() => import('./components/studio/StudioLanding'));
 const BrandGuidelinesWizard = lazy(() => import('./components/studio/brand-guidelines/BrandGuidelinesWizard'));
 const LogoGridTool = lazy(() => import('./components/studio/logo-grid/LogoGridTool'));
+const MockupTool = lazy(() => import('./components/studio/mockup-generator/MockupTool'));
 
 import './lib/css/app.scss';
 
@@ -263,6 +264,14 @@ export const App: React.FC = () => {
         element={
           <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-foreground font-mono text-sm">Loading Logo Grid Designer...</div>}>
             <LogoGridTool />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/studio/mockups"
+        element={
+          <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-foreground font-mono text-sm">Loading Mockup Generator...</div>}>
+            <MockupTool />
           </Suspense>
         }
       />

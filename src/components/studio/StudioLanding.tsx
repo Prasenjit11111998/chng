@@ -19,6 +19,13 @@ const STUDIO_TOOLS = [
     route: '/studio/logo-grid',
   },
   {
+    id: 'mockup-generator',
+    name: 'Mockup Generator',
+    description: 'Instantly frame your screenshots in premium Apple devices and Safari browsers with cinematic lighting and mesh gradients.',
+    status: 'available' as const,
+    route: '/studio/mockups',
+  },
+  {
     id: 'logo-export',
     name: 'Logo Pack',
     description: 'Export all formats in one click.',
