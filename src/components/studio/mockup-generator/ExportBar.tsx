@@ -11,7 +11,8 @@ export const ExportBar: React.FC<ExportBarProps> = ({ canvasRef, disabled }) => 
 
   return (
     <div className="lg-export-bar">
-      <div className="lg-export-bar__inner">
+      <span className="lg-export-dims">Ready to export</span>
+      <div className="lg-export-actions">
         <button
           className="lg-export-btn lg-export-btn--ghost"
           onClick={() => canvasRef.current?.copyToClipboard()}
@@ -23,21 +24,21 @@ export const ExportBar: React.FC<ExportBarProps> = ({ canvasRef, disabled }) => 
 
         <button
           className="lg-export-btn lg-export-btn--ghost"
+          onClick={() => canvasRef.current?.downloadPNG(true)}
+          title="Download mockup without background (Transparent PNG)"
+          aria-label="Download transparent mockup"
+        >
+          ↓ Transparent
+        </button>
+
+        <button
+          id="mockup-download-png"
+          className="lg-export-btn lg-export-btn--primary"
           onClick={() => canvasRef.current?.downloadPNG(false)}
           title="Download full mockup with background"
           aria-label="Download mockup"
         >
-          ↓ PNG
-        </button>
-
-        <button
-          id="mockup-download-transparent"
-          className="lg-export-btn lg-export-btn--ghost"
-          onClick={() => canvasRef.current?.downloadPNG(true)}
-          title="Download Mockup without background (Transparent PNG)"
-          aria-label="Download transparent mockup"
-        >
-          ↓ Mockup Only
+          ↓ Download PNG
         </button>
       </div>
     </div>

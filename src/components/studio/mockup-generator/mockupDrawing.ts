@@ -6,6 +6,7 @@ export const DEVICES: Record<string, MockupDevice> = {
   'floating-glass': {
     id: 'floating-glass',
     name: 'Floating Glass Card',
+    description: 'Minimal floating screen on any background',
     frameW: 2400,
     frameH: 1600,
     screenX: 40, 
@@ -17,6 +18,7 @@ export const DEVICES: Record<string, MockupDevice> = {
   'safari-window': {
     id: 'safari-window',
     name: 'Safari Browser',
+    description: 'macOS browser window with chrome UI',
     frameW: 2400,
     frameH: 1600,
     screenX: 0,
@@ -28,6 +30,7 @@ export const DEVICES: Record<string, MockupDevice> = {
   'clay-phone': {
     id: 'clay-phone',
     name: 'Clay Mobile',
+    description: 'Soft graphite phone for mobile UI shots',
     frameW: 1000,
     frameH: 2000,
     screenX: 45,
@@ -217,7 +220,8 @@ export function drawImpeccableDevice(
   scale: number,
   userImg: HTMLImageElement | null,
   showShadows: boolean,
-  showGlare: boolean
+  showGlare: boolean,
+  options: { glassCornerRadius?: number } = {}
 ) {
   const fw = device.frameW * scale;
   const fh = device.frameH * scale;
@@ -241,9 +245,10 @@ export function drawImpeccableDevice(
   // ── 2. Hardware / Chassis ──
   
   if (device.id === 'floating-glass') {
+    const r = options.glassCornerRadius ?? 40;
     // Translucent frosted glass effect behind the image
     ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-    roundRect(ctx, 0, 0, device.frameW, device.frameH, 40);
+    roundRect(ctx, 0, 0, device.frameW, device.frameH, r);
     ctx.fill();
     
     // 1px Solid Semi-Transparent Rim Light
@@ -254,7 +259,7 @@ export function drawImpeccableDevice(
     // Subtle Inner Dark Rim
     ctx.lineWidth = 2;
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
-    roundRect(ctx, 2, 2, device.frameW - 4, device.frameH - 4, 38);
+    roundRect(ctx, 2, 2, device.frameW - 4, device.frameH - 4, Math.max(0, r - 2));
     ctx.stroke();
 
   } else if (device.id === 'clay-phone') {
@@ -375,7 +380,10 @@ export function drawImpeccableDevice(
   };
 
   // Standard single screen
-  drawMaskedImage(userImg, device.screenX, device.screenY, device.screenW, device.screenH, device.screenRadius);
+  const screenR = device.id === 'floating-glass'
+    ? (options.glassCornerRadius ?? 32)
+    : device.screenRadius;
+  drawMaskedImage(userImg, device.screenX, device.screenY, device.screenW, device.screenH, screenR);
   if (device.id === 'clay-phone') {
      drawDynamicIsland(0, 0, device.frameW);
   }

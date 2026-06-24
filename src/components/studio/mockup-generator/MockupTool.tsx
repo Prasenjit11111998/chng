@@ -1,12 +1,11 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Logo from '../../Logo';
+import { Logo } from '../../Logo';
 import { ControlPanel } from './ControlPanel';
 import MockupCanvas, { MockupCanvasHandle } from './MockupCanvas';
 import { ExportBar } from './ExportBar';
 import { MockupState, DEFAULT_MOCKUP_STATE } from './types';
-import '../../../lib/css/mockup-generator.css';
-import '../../../lib/css/logo-grid.css'; // Reuse sidebar/control styling
+import '../../../lib/css/logo-grid.css';
 
 export const MockupTool: React.FC = () => {
   const navigate = useNavigate();
@@ -20,39 +19,43 @@ export const MockupTool: React.FC = () => {
   }, []);
 
   return (
-    <div className="h-[100dvh] overflow-hidden bg-background flex flex-col font-body">
-      {/* ── Shell Header ── */}
-      <div className="mg-topbar">
-        <div className="mg-topbar__left">
+    <div className="lg-shell">
+      {/* ── Top nav bar ── */}
+      <div className="lg-topbar">
+        <div className="lg-topbar__left">
           <button
-            className="bg-accent text-on-accent border-none px-4 py-1.5 cursor-pointer flex flex-shrink-0 items-center justify-center gap-2 hover:opacity-90 pixel-btn"
-            onClick={() => navigate('/studio')}
-            aria-label="Back to Studio"
+            className="bg-accent text-on-accent border-none px-5 py-2 cursor-pointer flex items-center justify-center hover:opacity-90 pixel-btn flex-shrink-0"
+            onClick={() => navigate('/')}
+            aria-label="Go back to Chng home"
           >
-            <Logo className="text-xl font-black" />
+            <Logo className="text-3xl lg:text-4xl font-black" />
           </button>
-          
-          <div className="mg-breadcrumb">
-            <button className="mg-breadcrumb__link" onClick={() => navigate('/studio')}>
+
+          {/* Breadcrumb */}
+          <nav className="lg-breadcrumb" aria-label="Page location">
+            <button
+              className="lg-breadcrumb__link"
+              onClick={() => navigate('/studio')}
+            >
               Studio
             </button>
-            <span className="mg-breadcrumb__sep">/</span>
-            <span className="mg-breadcrumb__current">Mockup Generator</span>
-          </div>
+            <span className="lg-breadcrumb__sep" aria-hidden="true">/</span>
+            <span className="lg-breadcrumb__current">Mockup Generator</span>
+          </nav>
         </div>
       </div>
 
       {/* ── Body ── */}
-      <div className="mg-body">
+      <div className="lg-body">
         {/* Left: Controls */}
-        <aside className="mg-sidebar" aria-label="Mockup controls">
-           <ControlPanel state={state} onChange={handleChange} />
+        <aside className="lg-sidebar" aria-label="Mockup controls">
+          <ControlPanel state={state} onChange={handleChange} />
         </aside>
 
         {/* Right: Canvas + export bar */}
-        <main className="mg-main" aria-label="Canvas preview">
-          <div className="mg-canvas-wrap">
-             <MockupCanvas ref={canvasRef} state={state} />
+        <main className="lg-main" aria-label="Canvas preview">
+          <div className="lg-canvas-wrap">
+            <MockupCanvas ref={canvasRef} state={state} />
           </div>
           <ExportBar canvasRef={canvasRef} disabled={!state.screenshotSrc} />
         </main>

@@ -28,8 +28,9 @@ const STUDIO_TOOLS = [
   {
     id: 'logo-export',
     name: 'Logo Pack',
-    description: 'Export all formats in one click.',
-    status: 'coming-soon' as const,
+    description: 'Generate a production-ready ZIP with every logo format your project needs: favicons, PWA icons, OG images, SVG variants, and manifest files.',
+    status: 'available' as const,
+    route: '/studio/logo-pack',
   },
   {
     id: 'presentation',

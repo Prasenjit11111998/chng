@@ -1,5 +1,5 @@
 import React from 'react';
-import type { MockupState, BgFitMode } from './types';
+import type { MockupState, BgFitMode, CanvasAspect } from './types';
 import { DEVICES, PALETTES } from './mockupDrawing';
 
 interface ControlPanelProps {
@@ -7,11 +7,18 @@ interface ControlPanelProps {
   onChange: <K extends keyof MockupState>(k: K, v: MockupState[K]) => void;
 }
 
+const CANVAS_ASPECTS: { id: CanvasAspect; label: string }[] = [
+  { id: '16:9',  label: '16:9'  },
+  { id: '4:3',   label: '4:3'   },
+  { id: '1:1',   label: '1:1'   },
+  { id: '9:16',  label: '9:16'  },
+];
+
 export const ControlPanel: React.FC<ControlPanelProps> = ({ state, onChange }) => {
+  // ── Screenshot ──────────────────────────────────────────────────────────────
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const url = URL.createObjectURL(file);
     onChange('screenshotSrc', url);
     onChange('screenshotFileName', file.name);
@@ -24,14 +31,13 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ state, onChange }) =
     onChange('screenshotFileName', '');
   };
 
+  // ── Custom Background ───────────────────────────────────────────────────────
   const handleCustomBgChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const url = URL.createObjectURL(file);
     onChange('customBgSrc', url);
     onChange('customBgFileName', file.name);
-    // Unset palette so we know to use custom bg
     onChange('backgroundPaletteId', 'custom');
     e.target.value = '';
   };
@@ -40,161 +46,210 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ state, onChange }) =
     if (state.customBgSrc) URL.revokeObjectURL(state.customBgSrc);
     onChange('customBgSrc', null);
     onChange('customBgFileName', '');
-    onChange('backgroundPaletteId', 'studio-sand');
+    onChange('backgroundPaletteId', 'deep-space');
   };
 
   return (
-    <div className="lg-controls">
-      {/* ── IMAGE UPLOAD ── */}
-      <section className="lg-controls__section">
-        <h2 className="lg-controls__heading">Your Design</h2>
-        <div className="lg-upload-area">
-          {!state.screenshotSrc ? (
-            <label className="lg-upload-label" style={{ cursor: 'pointer', textAlign: 'center' }}>
-              <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-              <div className="text-foreground text-sm font-medium mb-1">Upload Screenshot</div>
-              <div className="text-muted text-xs">PNG, JPG, or WebP</div>
-            </label>
-          ) : (
-            <div className="lg-upload-active">
-              <img src={state.screenshotSrc} alt="Preview" className="w-12 h-12 object-cover rounded shadow-sm" />
-              <div className="flex-1 min-w-0">
-                <div className="text-foreground text-sm truncate">{state.screenshotFileName}</div>
-                <button
-                  className="text-muted text-xs hover:text-foreground transition-colors p-0 bg-transparent border-none cursor-pointer mt-1"
-                  onClick={handleRemoveScreenshot}
-                >
-                  ✕ Remove
-                </button>
-              </div>
+    <div className="lg-control-panel">
+
+      {/* ── 1. SCREENSHOT ── */}
+      <section className="lg-section">
+        <p className="lg-section__label">Your Screenshot</p>
+        {!state.screenshotSrc ? (
+          <label className="lg-dropzone" tabIndex={0} role="button" aria-label="Upload screenshot">
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={handleFileChange}
+            />
+            <span className="lg-dropzone__icon">⬆</span>
+            <p className="lg-dropzone__text">
+              Drop or <span className="lg-dropzone__link">browse</span>
+            </p>
+            <p className="lg-dropzone__formats">PNG · JPG · WebP</p>
+          </label>
+        ) : (
+          <div className="lg-upload-preview">
+            <img
+              src={state.screenshotSrc}
+              alt="Screenshot preview"
+              className="lg-upload-preview__img"
+            />
+            <div className="lg-upload-preview__meta">
+              <span className="lg-upload-preview__name">{state.screenshotFileName}</span>
+              <button className="lg-upload-preview__remove" onClick={handleRemoveScreenshot}>
+                ✕ Remove
+              </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </section>
 
-      {/* ── DEVICE SELECTOR ── */}
-      <section className="lg-controls__section">
-        <h2 className="lg-controls__heading">Presentation Device</h2>
-        <div className="flex flex-col gap-2">
+      {/* ── 2. STYLE ── */}
+      <section className="lg-section">
+        <p className="lg-section__label">Style</p>
+        <div className="lg-canvas-presets">
           {Object.values(DEVICES).map(device => (
             <button
               key={device.id}
-              className={`text-left px-3 py-2 rounded text-sm font-medium transition-colors border ${
-                state.selectedDeviceId === device.id 
-                  ? 'bg-foreground text-background border-foreground' 
-                  : 'bg-transparent text-foreground border-separator hover:border-muted'
-              }`}
+              className={`lg-preset-btn${state.selectedDeviceId === device.id ? ' lg-preset-btn--active' : ''}`}
               onClick={() => onChange('selectedDeviceId', device.id)}
+              aria-pressed={state.selectedDeviceId === device.id}
             >
-              {device.name}
+              <span style={{ display: 'block', fontSize: '12px', fontWeight: 500 }}>{device.name}</span>
+              <span style={{ display: 'block', fontSize: '10px', opacity: 0.55, fontFamily: 'var(--font-mono)', marginTop: '2px' }}>{device.description}</span>
             </button>
           ))}
         </div>
       </section>
 
-      {/* ── BACKGROUNDS ── */}
-      <section className="lg-controls__section">
-        <h2 className="lg-controls__heading">Background</h2>
-        <div className="flex flex-col gap-3">
-          
-          {/* Custom Image Upload */}
-          <div className="lg-upload-area">
-            {!state.customBgSrc ? (
-              <label className="lg-upload-label" style={{ cursor: 'pointer', textAlign: 'center', padding: '16px' }}>
-                <input type="file" accept="image/*" className="hidden" onChange={handleCustomBgChange} />
-                <div className="text-foreground text-sm font-medium mb-1">Custom Background Photo</div>
-                <div className="text-muted text-xs">JPG, PNG, or WebP</div>
-              </label>
-            ) : (
-              <div className="lg-upload-active">
-                <img src={state.customBgSrc} alt="Preview" className="w-12 h-12 object-cover rounded shadow-sm" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-foreground text-sm truncate">{state.customBgFileName}</div>
-                  <button
-                    className="text-muted text-xs hover:text-foreground transition-colors p-0 bg-transparent border-none cursor-pointer mt-1"
-                    onClick={handleRemoveCustomBg}
-                  >
-                    ✕ Remove Image
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+      {/* ── 3. CANVAS ── */}
+      <section className="lg-section">
+        <p className="lg-section__label">Canvas Ratio</p>
+        <div className="lg-grid-tabs">
+          {CANVAS_ASPECTS.map(a => (
+            <button
+              key={a.id}
+              className={`lg-grid-tab${state.canvasAspect === a.id ? ' lg-grid-tab--active' : ''}`}
+              onClick={() => onChange('canvasAspect', a.id)}
+              aria-pressed={state.canvasAspect === a.id}
+            >
+              {a.label}
+            </button>
+          ))}
+        </div>
+      </section>
 
-          {/* Fit Mode for Custom Bg */}
-          {state.customBgSrc && (
-            <div className="flex bg-bg3 p-1 rounded-lg border border-border2">
-              {['cover', 'contain', 'tile'].map((mode) => (
-                <button
-                  key={mode}
-                  className={`flex-1 text-[11px] font-medium uppercase tracking-wider py-1.5 rounded transition-all ${
-                    state.customBgFitMode === mode ? 'bg-bg text-foreground shadow-sm' : 'text-muted hover:text-foreground'
-                  }`}
-                  onClick={() => onChange('customBgFitMode', mode as BgFitMode)}
-                >
-                  {mode}
-                </button>
-              ))}
-            </div>
-          )}
+      {/* ── 4. BACKGROUND ── */}
+      <section className="lg-section">
+        <p className="lg-section__label">Background</p>
 
-          <div className="text-[10px] uppercase font-bold text-muted tracking-widest mt-2">Editorial Meshes</div>
-          
-          {/* Editorial Mesh Grids */}
-          <div className="grid grid-cols-2 gap-2">
-            {Object.keys(PALETTES).map(paletteId => {
-              const p = PALETTES[paletteId];
-              return (
-                <button
-                  key={paletteId}
-                  className={`flex items-center gap-2 px-2 py-1.5 rounded transition-colors border ${
-                    state.backgroundPaletteId === paletteId && !state.customBgSrc
-                      ? 'bg-foreground text-background border-foreground' 
-                      : 'bg-transparent text-muted border-separator hover:text-foreground'
-                  }`}
-                  onClick={() => {
-                    onChange('backgroundPaletteId', paletteId);
-                    if (state.customBgSrc) {
-                      handleRemoveCustomBg(); // Clear custom image if switching to mesh
-                    }
-                  }}
-                >
-                  <div 
-                    className="w-3 h-3 rounded-full border border-black/10"
-                    style={{ background: p.colors[0] === 'transparent' ? '#ccc' : p.colors[0] }} 
+        {/* Palette grid */}
+        <div className="lg-filter-grid">
+          {Object.keys(PALETTES).map(paletteId => {
+            const p = PALETTES[paletteId];
+            const isActive = state.backgroundPaletteId === paletteId && !state.customBgSrc;
+            return (
+              <button
+                key={paletteId}
+                className={`lg-filter-card${isActive ? ' lg-filter-card--active' : ''}`}
+                onClick={() => {
+                  onChange('backgroundPaletteId', paletteId);
+                  if (state.customBgSrc) handleRemoveCustomBg();
+                }}
+                aria-pressed={isActive}
+              >
+                <div className="lg-filter-swatch">
+                  <div
+                    className="lg-filter-swatch__grid"
+                    style={{
+                      background: p.colors[0] === 'transparent'
+                        ? 'repeating-conic-gradient(#ccc 0% 25%, white 0% 50%) 0 0 / 8px 8px'
+                        : `linear-gradient(135deg, ${p.colors[1]}, ${p.colors[0]}, ${p.colors[2]})`
+                    }}
                   />
-                  <span className="text-xs">{p.name}</span>
-                </button>
-              );
-            })}
-          </div>
+                </div>
+                <span className="lg-filter-label">{p.name}</span>
+              </button>
+            );
+          })}
         </div>
+
+        {/* Custom image upload */}
+        {!state.customBgSrc ? (
+          <label className="lg-dropzone" style={{ marginTop: '8px' }} tabIndex={0} role="button" aria-label="Upload custom background image">
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={handleCustomBgChange}
+            />
+            <span className="lg-dropzone__icon" style={{ fontSize: '13px' }}>🖼</span>
+            <p className="lg-dropzone__text">Custom photo background</p>
+            <p className="lg-dropzone__formats">JPG · PNG · WebP</p>
+          </label>
+        ) : (
+          <div className="lg-upload-preview" style={{ marginTop: '8px' }}>
+            <img src={state.customBgSrc} alt="Background preview" className="lg-upload-preview__img" />
+            <div className="lg-upload-preview__meta">
+              <span className="lg-upload-preview__name">{state.customBgFileName}</span>
+              <button className="lg-upload-preview__remove" onClick={handleRemoveCustomBg}>
+                ✕ Remove
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Fit mode — only when custom bg is loaded */}
+        {state.customBgSrc && (
+          <div className="lg-grid-tabs" style={{ marginTop: '8px' }}>
+            {(['cover', 'contain', 'tile'] as BgFitMode[]).map(mode => (
+              <button
+                key={mode}
+                className={`lg-grid-tab${state.customBgFitMode === mode ? ' lg-grid-tab--active' : ''}`}
+                onClick={() => onChange('customBgFitMode', mode)}
+                aria-pressed={state.customBgFitMode === mode}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+        )}
       </section>
 
-      {/* ── DETAILS ── */}
-      <section className="lg-controls__section">
-        <h2 className="lg-controls__heading">Details</h2>
-        <div className="flex flex-col gap-3">
-          <label className="flex items-center justify-between cursor-pointer">
-            <span className="text-sm font-medium text-muted hover:text-foreground transition-colors">Screen Glare</span>
-            <input 
-              type="checkbox" 
-              checked={state.showGlare} 
-              onChange={e => onChange('showGlare', e.target.checked)}
-              className="accent-foreground w-4 h-4"
-            />
-          </label>
-          <label className="flex items-center justify-between cursor-pointer">
-            <span className="text-sm font-medium text-muted hover:text-foreground transition-colors">Ambient Shadows</span>
-            <input 
-              type="checkbox" 
-              checked={state.showShadows} 
-              onChange={e => onChange('showShadows', e.target.checked)}
-              className="accent-foreground w-4 h-4"
-            />
-          </label>
-        </div>
+      {/* ── 5. EFFECTS ── */}
+      <section className="lg-section">
+        <p className="lg-section__label">Effects</p>
+
+        <label className="lg-toggle-row" htmlFor="toggle-glare">
+          <span className="lg-toggle-label">Screen Glare</span>
+          <button
+            id="toggle-glare"
+            role="switch"
+            aria-checked={state.showGlare}
+            className={`lg-toggle${state.showGlare ? ' lg-toggle--on' : ''}`}
+            onClick={() => onChange('showGlare', !state.showGlare)}
+          >
+            <span className="lg-toggle__thumb" />
+          </button>
+        </label>
+
+        <label className="lg-toggle-row" htmlFor="toggle-shadows">
+          <span className="lg-toggle-label">Ambient Shadows</span>
+          <button
+            id="toggle-shadows"
+            role="switch"
+            aria-checked={state.showShadows}
+            className={`lg-toggle${state.showShadows ? ' lg-toggle--on' : ''}`}
+            onClick={() => onChange('showShadows', !state.showShadows)}
+          >
+            <span className="lg-toggle__thumb" />
+          </button>
+        </label>
+
+        {/* Corner Radius — only for Glass Card */}
+        {state.selectedDeviceId === 'floating-glass' && (
+          <div style={{ marginTop: '6px' }}>
+            <div className="lg-slider-row">
+              <span className="lg-inline-label">Corner Radius</span>
+              <input
+                type="range"
+                min={0}
+                max={80}
+                step={2}
+                value={state.glassCornerRadius}
+                onChange={e => onChange('glassCornerRadius', Number(e.target.value))}
+                className="lg-slider"
+                aria-label="Glass card corner radius"
+              />
+              <span className="lg-slider-val">{state.glassCornerRadius}px</span>
+            </div>
+          </div>
+        )}
       </section>
+
     </div>
   );
 };
+

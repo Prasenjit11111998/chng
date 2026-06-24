@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useImperativeHandle, forwardRef, useCallback } from 'react';
 import type { MockupState } from './types';
+import { CANVAS_ASPECT_DIMS } from './types';
 import { drawPremiumBackground, drawImpeccableDevice, DEVICES } from './mockupDrawing';
 
 export interface MockupCanvasHandle {
@@ -17,15 +18,21 @@ export const MockupCanvas = forwardRef<MockupCanvasHandle, MockupCanvasProps>(
     const userImgRef = useRef<HTMLImageElement | null>(null);
     const customBgImgRef = useRef<HTMLImageElement | null>(null);
     
-    // Canvas base dimensions (4K resolution)
-    const W = 3840;
-    const H = 2160;
+    const dims = CANVAS_ASPECT_DIMS[state.canvasAspect] ?? CANVAS_ASPECT_DIMS['16:9'];
+    const W = dims.w;
+    const H = dims.h;
+
+    const drawOptions = { glassCornerRadius: state.glassCornerRadius };
 
     const render = useCallback(() => {
       const canvas = canvasRef.current;
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
+
+      // Canvas size may have changed with aspect ratio
+      canvas.width = W;
+      canvas.height = H;
 
       // 1. Draw Impeccable Background
       drawPremiumBackground(
@@ -35,11 +42,11 @@ export const MockupCanvas = forwardRef<MockupCanvasHandle, MockupCanvasProps>(
         state.customBgFitMode
       );
 
-      // 2. Determine Device Scale to fit nicely in 3840x2160
+      // 2. Determine Device Scale to fit nicely in canvas
       const device = DEVICES[state.selectedDeviceId];
       if (!device) return;
 
-      // Fit device into 75% of canvas height/width for a generous premium padding
+      // Fit device into 75% of canvas height/width for generous premium padding
       const scaleX = (W * 0.75) / device.frameW;
       const scaleY = (H * 0.75) / device.frameH;
       const deviceScale = Math.min(scaleX, scaleY);
@@ -59,10 +66,11 @@ export const MockupCanvas = forwardRef<MockupCanvasHandle, MockupCanvasProps>(
         deviceScale, 
         userImgRef.current, 
         state.showShadows, 
-        state.showGlare
+        state.showGlare,
+        drawOptions
       );
 
-    }, [state]);
+    }, [state, W, H, drawOptions]);
 
     // Load User Screenshot
     useEffect(() => {
@@ -94,7 +102,7 @@ export const MockupCanvas = forwardRef<MockupCanvasHandle, MockupCanvasProps>(
       img.src = state.customBgSrc;
     }, [state.customBgSrc, render]);
 
-    // Re-render
+    // Re-render on any state change
     useEffect(() => { render(); }, [render]);
 
     // Export Handlers
@@ -104,7 +112,6 @@ export const MockupCanvas = forwardRef<MockupCanvasHandle, MockupCanvasProps>(
         if (!canvas) return;
 
         if (transparent) {
-          // Offscreen canvas to render just the device without background
           const off = document.createElement('canvas');
           off.width = W; off.height = H;
           const ctx2 = off.getContext('2d')!;
@@ -116,7 +123,7 @@ export const MockupCanvas = forwardRef<MockupCanvasHandle, MockupCanvasProps>(
              const deviceScale = Math.min(scaleX, scaleY);
              const dx = (W - device.frameW * deviceScale) / 2;
              const dy = (H - device.frameH * deviceScale) / 2;
-             drawImpeccableDevice(ctx2, device, dx, dy, deviceScale, userImgRef.current, state.showShadows, state.showGlare);
+             drawImpeccableDevice(ctx2, device, dx, dy, deviceScale, userImgRef.current, state.showShadows, state.showGlare, drawOptions);
           }
 
           off.toBlob(blob => {
@@ -131,7 +138,7 @@ export const MockupCanvas = forwardRef<MockupCanvasHandle, MockupCanvasProps>(
             if (!blob) return;
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url; a.download = 'photorealistic-mockup.png'; a.click();
+            a.href = url; a.download = 'chng-mockup.png'; a.click();
             setTimeout(() => URL.revokeObjectURL(url), 1000);
           }, 'image/png');
         }
@@ -146,7 +153,10 @@ export const MockupCanvas = forwardRef<MockupCanvasHandle, MockupCanvasProps>(
           } catch { /* silently fail */ }
         }, 'image/png');
       }
-    }), [state]);
+    }), [state, W, H, drawOptions]);
+
+    // Compute CSS aspect ratio string
+    const [aw, ah] = state.canvasAspect.split(':').map(Number);
 
     return (
       <div 
@@ -156,8 +166,8 @@ export const MockupCanvas = forwardRef<MockupCanvasHandle, MockupCanvasProps>(
           ref={canvasRef}
           width={W}
           height={H}
-          className="w-full max-w-full max-h-full object-contain shadow-2xl transition-transform duration-300"
-          style={{ aspectRatio: '16/9' }}
+          className="w-full max-w-full max-h-full object-contain shadow-2xl"
+          style={{ aspectRatio: `${aw} / ${ah}` }}
           aria-label="Mockup canvas preview"
           role="img"
         />

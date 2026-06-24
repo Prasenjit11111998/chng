@@ -1,41 +1,57 @@
 export interface MockupDevice {
   id: string;
   name: string;
+  description: string;
   frameW: number;
   frameH: number;
   screenX: number;
   screenY: number;
   screenW: number;
   screenH: number;
-  screenRadius: number; // For clipping the screenshot corners
+  screenRadius: number;
 }
 
 export type BgFitMode = 'cover' | 'contain' | 'tile';
+export type CanvasAspect = '16:9' | '4:3' | '1:1' | '9:16';
 
 export interface MockupState {
   screenshotSrc: string | null;
   screenshotFileName: string;
   selectedDeviceId: string;
   
+  // Canvas
+  canvasAspect: CanvasAspect;
+
   // Background Options
-  backgroundPaletteId: string; // The ID of the editorial color palette to use
+  backgroundPaletteId: string;
   customBgSrc: string | null;
   customBgFileName: string;
   customBgFitMode: BgFitMode;
 
   // Effects
-  showGlare: boolean; // Toggle for the glass reflection
-  showShadows: boolean; // Toggle for the premium drop shadows
+  showGlare: boolean;
+  showShadows: boolean;
+  glassCornerRadius: number; // 0–80, only used by floating-glass
 }
+
+export const CANVAS_ASPECT_DIMS: Record<CanvasAspect, { w: number; h: number }> = {
+  '16:9': { w: 3840, h: 2160 },
+  '4:3':  { w: 2560, h: 1920 },
+  '1:1':  { w: 2400, h: 2400 },
+  '9:16': { w: 1200, h: 2133 },
+};
 
 export const DEFAULT_MOCKUP_STATE: MockupState = {
   screenshotSrc: null,
   screenshotFileName: '',
   selectedDeviceId: 'floating-glass',
-  backgroundPaletteId: 'studio-sand',
+  canvasAspect: '16:9',
+  backgroundPaletteId: 'deep-space',
   customBgSrc: null,
   customBgFileName: '',
   customBgFitMode: 'cover',
   showGlare: true,
   showShadows: true,
+  glassCornerRadius: 40,
 };
+

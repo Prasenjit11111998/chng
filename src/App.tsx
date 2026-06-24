@@ -26,6 +26,7 @@ const StudioLanding = lazy(() => import('./components/studio/StudioLanding'));
 const BrandGuidelinesWizard = lazy(() => import('./components/studio/brand-guidelines/BrandGuidelinesWizard'));
 const LogoGridTool = lazy(() => import('./components/studio/logo-grid/LogoGridTool'));
 const MockupTool = lazy(() => import('./components/studio/mockup-generator/MockupTool'));
+const LogoPackTool = lazy(() => import('./components/studio/logo-pack/LogoPackTool'));
 
 import './lib/css/app.scss';
 
@@ -272,6 +273,14 @@ export const App: React.FC = () => {
         element={
           <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-foreground font-mono text-sm">Loading Mockup Generator...</div>}>
             <MockupTool />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/studio/logo-pack"
+        element={
+          <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-foreground font-mono text-sm">Loading Logo Pack...</div>}>
+            <LogoPackTool />
           </Suspense>
         }
       />
