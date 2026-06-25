@@ -1,5 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
+export const SHOW_RETRO_THEMES = false; // Set to true to show Game Boy and Matrix themes in standard UI selection
+
 export interface DefaultFormats {
   image: string;
   video: string;

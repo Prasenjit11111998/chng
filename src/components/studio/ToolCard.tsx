@@ -17,8 +17,10 @@ export const ToolCard: React.FC<ToolCardProps> = ({ name, description, status, r
 
   return (
     <div
-      className={`bg-panel border p-6 flex flex-col gap-0 min-h-[160px] pixel-box relative group ${
-        isAvailable ? 'border-separator cursor-pointer hover:bg-panel-highlight' : 'border-separator opacity-50 cursor-default'
+      className={`bg-panel border p-6 flex flex-col gap-0 min-h-[160px] pixel-box relative group transition-colors duration-150 ${
+        isAvailable
+          ? 'border-separator cursor-pointer hover:border-foreground/30'
+          : 'border-separator opacity-50 cursor-default'
       }`}
       onClick={() => isAvailable && route && navigate(route)}
       role={isAvailable ? 'button' : undefined}
@@ -41,14 +43,14 @@ export const ToolCard: React.FC<ToolCardProps> = ({ name, description, status, r
       </div>
 
       <div className="flex-1 mt-2 pr-20">
-        <h3 className="text-lg font-bold text-foreground mb-2">{name}</h3>
-        <p className="text-sm text-muted leading-relaxed">{description}</p>
+        <h3 className="text-base font-bold text-foreground mb-2 font-display">{name}</h3>
+        <p className="text-sm text-muted leading-relaxed font-normal">{description}</p>
       </div>
 
       {isAvailable && route && (
         <div className="mt-4 flex justify-end overflow-hidden">
-          <span className="text-sm font-bold text-muted group-hover:text-accent font-body transition-transform transform translate-x-2 group-hover:translate-x-0">
-            Open Tool →
+          <span className="text-sm font-bold text-muted group-hover:text-accent font-mono transition-colors duration-150">
+            Open →
           </span>
         </div>
       )}

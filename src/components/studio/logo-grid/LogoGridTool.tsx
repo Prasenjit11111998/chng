@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Logo } from '../../Logo';
+import FloatingHeader from '../../ui/floating-header';
 import { ControlPanel } from './ControlPanel';
 import GridCanvas, { type GridCanvasHandle } from './GridCanvas';
 import { ExportBar } from './ExportBar';
@@ -66,32 +66,27 @@ export const LogoGridTool: React.FC = () => {
 
   return (
     <div className="lg-shell">
-      {/* ── Top nav bar ── */}
-      <div className="lg-topbar">
-        <div className="lg-topbar__left">
-          <button
-            className="bg-accent text-on-accent border-none px-5 py-2 cursor-pointer flex items-center justify-center hover:opacity-90 pixel-btn flex-shrink-0"
-            onClick={() => navigate('/')}
-            aria-label="Go back to Chng home"
-          >
-            <Logo className="text-3xl lg:text-4xl font-black" />
-          </button>
+      {/* ── Shared Floating Header ── */}
+      <div className="w-full px-4 pt-4 flex justify-center flex-shrink-0">
+        <FloatingHeader />
+      </div>
 
-          {/* Breadcrumb */}
-          <nav className="lg-breadcrumb" aria-label="Breadcrumb">
+      {/* ── Breadcrumb strip ── */}
+      <div className="lg-topbar lg-topbar--slim">
+        <div className="lg-topbar__left">
+          <div className="flex items-center text-sm font-mono px-3 py-1 bg-panel-highlight pixel-box">
             <button
-              className="lg-breadcrumb__link"
               onClick={() => navigate('/studio')}
+              className="text-muted hover:text-foreground cursor-pointer bg-transparent border-none p-0 font-mono transition-colors"
               aria-label="Navigate to Studio"
             >
               Studio
             </button>
-            <span className="lg-breadcrumb__sep" aria-hidden="true">/</span>
-            <span className="lg-breadcrumb__current">Logo Grid Designer</span>
-          </nav>
+            <span className="text-separator mx-2">/</span>
+            <span className="text-foreground font-semibold">Logo Grid Designer</span>
+          </div>
         </div>
-
-        <div className="lg-topbar__right">
+        <div className="lg-topbar__right flex items-center gap-3">
           <span className="lg-topbar__hint">Drag to reposition · Scroll to zoom</span>
         </div>
       </div>

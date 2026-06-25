@@ -20,6 +20,7 @@ export default {
 		},
 		extend: {
 			backgroundColor: {
+				background: "var(--bg)",
 				panel: "var(--bg-panel)",
 				"panel-highlight": "var(--bg-panel-highlight)",
 				separator: "var(--bg-separator)",

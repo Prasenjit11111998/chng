@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Logo } from '../../Logo';
+import FloatingHeader from '../../ui/floating-header';
 import '../../../lib/css/studio.css';
 
 interface WizardStep {
@@ -22,6 +22,7 @@ interface WizardShellProps {
   rightPanel?: React.ReactNode;
   fullWidth?: boolean;
   draftSaved?: boolean;
+  toolName?: string;
 }
 
 export const WizardShell: React.FC<WizardShellProps> = ({
@@ -37,22 +38,20 @@ export const WizardShell: React.FC<WizardShellProps> = ({
   rightPanel,
   fullWidth = false,
   draftSaved = false,
+  toolName = 'Brand Guidelines',
 }) => {
   const navigate = useNavigate();
 
   return (
     <div className="wizard-shell">
-      {/* ── Top nav bar ── */}
-      <div className="wizard-topbar border-b border-separator">
-        <div className="flex items-center gap-4">
-          <button
-            className="bg-accent text-on-accent border-none px-5 py-2 cursor-pointer flex flex-shrink-0 items-center justify-center hover:opacity-90 pixel-btn"
-            onClick={() => navigate('/')}
-            aria-label="Go back to home"
-          >
-            <Logo className="text-3xl lg:text-4xl font-black" />
-          </button>
+      {/* ── Shared Floating Header ── */}
+      <div className="w-full px-4 pt-4 flex justify-center flex-shrink-0">
+        <FloatingHeader />
+      </div>
 
+      {/* ── Breadcrumb + draft saved strip ── */}
+      <div className="wizard-topbar">
+        <div className="flex items-center gap-4">
           <div className="flex items-center text-sm font-mono px-3 py-1 bg-panel-highlight pixel-box h-full">
             <button
               onClick={() => navigate('/studio')}
@@ -61,11 +60,11 @@ export const WizardShell: React.FC<WizardShellProps> = ({
               Studio
             </button>
             <span className="text-separator mx-2">/</span>
-            <span className="text-foreground">Brand Guidelines</span>
+            <span className="text-foreground">{toolName}</span>
           </div>
         </div>
 
-        <div className="wizard-topbar__right">
+        <div className="wizard-topbar__right flex items-center gap-3">
           {draftSaved && (
             <span className="wizard-draft-badge" aria-live="polite">
               Draft saved

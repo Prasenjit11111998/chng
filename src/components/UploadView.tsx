@@ -41,7 +41,7 @@ export const UploadView: React.FC<UploadViewProps> = ({ onViewChange, activeTab,
       </div>
 
       {/* Switchable tabs & Uploader Dropzone */}
-      <div className="flex flex-col items-center w-full max-w-xl mx-auto mb-4">
+      <div className="flex flex-col items-center w-full max-w-[778px] mx-auto mb-4">
         {/* Toggle tabs */}
         <div className="flex bg-panel border border-separator p-1 rounded-none w-full mb-4">
           <button

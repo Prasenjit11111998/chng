@@ -140,8 +140,7 @@
 
 .studio-tool-card--available:hover,
 .studio-tool-card--available:focus-within {
-  border-color: var(--bg-button, #3e3e47);
-  transform: translateY(-3px);
+  border-color: var(--fg-muted, #55555f);
   outline: none;
 }
 
@@ -307,7 +306,7 @@
 .wizard-step-dot {
   width: 28px;
   height: 28px;
-  border-radius: 50%;
+  border-radius: 0;
   border: 2px solid var(--bg-separator, #252529);
   background: var(--bg, #0d0d0f);
   display: flex;
@@ -315,8 +314,7 @@
   justify-content: center;
   cursor: default;
   transition: background-color 150ms ease-out,
-              border-color 150ms ease-out,
-              transform 150ms ease-out;
+              border-color 150ms ease-out;
   flex-shrink: 0;
   padding: 0;
 }
@@ -336,15 +334,10 @@
   background: color-mix(in srgb, var(--accent, #e8342b) 25%, transparent);
 }
 
-/* Pulse animation on step completion */
+/* Pixel-sharp active state — no scale pulse */
 .wizard-step-dot--active {
-  animation: stepPulse 300ms ease-out;
-}
-
-@keyframes stepPulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
+  border-color: var(--accent, #e8342b);
+  background: var(--accent, #e8342b);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -361,7 +354,7 @@
 
 .wizard-step-dot--active .wizard-step-dot__num,
 .wizard-step-dot--done .wizard-step-dot__num {
-  color: #fff;
+  color: var(--fg-on-accent, #fff);
 }
 
 .wizard-step-dot--done .wizard-step-dot__num {
@@ -453,7 +446,7 @@
 
 .wizard-btn--primary {
   background: var(--accent, #e8342b);
-  color: #fff;
+  color: var(--fg-on-accent, #fff);
   margin-left: auto;
 }
 
@@ -602,7 +595,7 @@
 
 .wizard-add-btn {
   background: var(--bg-panel-highlight, #1c1c1f);
-  border: 1px dashed var(--bg-separator, #252529);
+  border: 1.5px dashed var(--fg);
   color: var(--fg-muted, #8c8c99);
   font-family: var(--font-body, 'Geist', sans-serif);
   font-size: 12px;
@@ -638,7 +631,7 @@
 }
 
 .logo-dropzone {
-  border: 2px dashed var(--bg-separator, #252529);
+  border: 2px dashed var(--fg);
   min-height: 120px;
   display: flex;
   align-items: center;
@@ -1175,7 +1168,7 @@
 
 .export-btn {
   background: var(--accent, #e8342b);
-  color: #fff;
+  color: var(--fg-on-accent, #fff);
   border: none;
   font-family: var(--font-body, 'Geist', sans-serif);
   font-size: 14px;
@@ -1546,7 +1539,7 @@
 
 .font-file-upload-btn {
   background: none;
-  border: 1px dashed var(--bg-separator, #252529);
+  border: 1.5px dashed var(--fg);
   color: var(--fg-muted, #8c8c99);
   font-family: var(--font-body, 'Geist', sans-serif);
   font-size: 11px;

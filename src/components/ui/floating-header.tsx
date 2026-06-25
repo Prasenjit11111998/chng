@@ -3,17 +3,18 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { selectFiles } from '../../store/filesSlice';
 import { selectCompressorFiles } from '../../store/compressorSlice';
-import { setTheme, RootState } from '../../store';
-import { Menu as MenuIcon, Sun as SunIcon, Moon as MoonIcon, Gamepad2 as GamepadIcon, Terminal as TerminalIcon, FlaskConical as StudioIcon } from 'lucide-react';
-import { Sheet, SheetContent, SheetFooter } from './sheet';
+import { RootState } from '../../store';
+import { Menu as MenuIcon } from 'lucide-react';
+import { Sheet, SheetContent } from './sheet';
 import { Button, buttonVariants } from './button';
 import { Logo } from '../Logo';
 import { m } from '../../lib/paraglide/messages';
 import { cn } from '@/lib/utils';
+import ThemeToggle from './theme-toggle';
 
 interface FloatingHeaderProps {
-  currentView: string;
-  onViewChange: (view: string) => void;
+  currentView?: string;
+  onViewChange?: (view: string) => void;
 }
 
 export function FloatingHeader({ currentView, onViewChange }: FloatingHeaderProps) {
@@ -21,16 +22,9 @@ export function FloatingHeader({ currentView, onViewChange }: FloatingHeaderProp
   const converterFiles = useSelector(selectFiles);
   const compressorFiles = useSelector(selectCompressorFiles);
   const theme = useSelector((state: RootState) => state.settings.theme);
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const isStudioRoute = location.pathname.startsWith('/studio');
-
-  const handleThemeToggle = () => {
-    const cycle: ('light' | 'dark' | 'gameboy' | 'matrix')[] = ['light', 'dark', 'gameboy', 'matrix'];
-    const nextIndex = (cycle.indexOf(theme) + 1) % cycle.length;
-    dispatch(setTheme(cycle[nextIndex]));
-  };
 
   const links = [
     {
@@ -70,7 +64,7 @@ export function FloatingHeader({ currentView, onViewChange }: FloatingHeaderProp
         {/* Left Side: Brand Logo (Black box) */}
         <button
           className="bg-accent hover:opacity-90 text-on-accent rounded-none items-center justify-center flex flex-shrink-0 px-5 py-2 border-none cursor-pointer duration-200"
-          onClick={() => onViewChange('converter')}
+          onClick={() => onViewChange ? onViewChange('converter') : navigate('/')}
           aria-label="Go to converter (home)"
         >
           <Logo className="text-on-accent text-3xl lg:text-4xl font-black" />
@@ -88,8 +82,10 @@ export function FloatingHeader({ currentView, onViewChange }: FloatingHeaderProp
                 onClick={() => {
                   if (link.isRoute && link.route) {
                     navigate(link.route);
-                  } else {
+                  } else if (onViewChange) {
                     onViewChange(link.id);
+                  } else {
+                    navigate('/');
                   }
                 }}
                 className={cn(
@@ -118,22 +114,7 @@ export function FloatingHeader({ currentView, onViewChange }: FloatingHeaderProp
         {/* Right Side: Theme Toggle & Menu (Mobile) */}
         <div className="flex items-center gap-2">
           {/* Theme Toggle Button */}
-          <button
-            onClick={handleThemeToggle}
-            className="w-10 h-10 flex items-center justify-center bg-transparent border-none cursor-pointer rounded-none hover:bg-panel-highlight duration-200 text-foreground"
-            aria-label={`Current theme: ${theme}. Click to change.`}
-            title={m["navbar.toggle_theme"]()}
-          >
-            {theme === 'dark' ? (
-              <MoonIcon size={20} />
-            ) : theme === 'gameboy' ? (
-              <GamepadIcon size={20} />
-            ) : theme === 'matrix' ? (
-              <TerminalIcon size={20} />
-            ) : (
-              <SunIcon size={20} />
-            )}
-          </button>
+          <ThemeToggle />
 
           {/* Hamburger Menu (Mobile/Tablet only) */}
           <Sheet open={open} onOpenChange={setOpen}>
@@ -161,8 +142,10 @@ export function FloatingHeader({ currentView, onViewChange }: FloatingHeaderProp
                       onClick={() => {
                         if (link.isRoute && link.route) {
                           navigate(link.route);
-                        } else {
+                        } else if (onViewChange) {
                           onViewChange(link.id);
+                        } else {
+                          navigate('/');
                         }
                         setOpen(false);
                       }}

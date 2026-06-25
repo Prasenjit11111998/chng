@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, updateSettings, setTheme, setEffects, resetSettings } from '../store';
+import { SHOW_RETRO_THEMES } from '../store/settingsSlice';
 import Panel from './Panel';
 import FancyInput from './FancyInput';
 import FormatDropdown from './FormatDropdown';
@@ -268,7 +269,7 @@ export const SettingsView: React.FC = () => {
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
+              <div className={SHOW_RETRO_THEMES ? "grid grid-cols-2 sm:grid-cols-4 gap-2 w-full" : "grid grid-cols-2 gap-2 w-full"}>
                 <Button
                   type="button"
                   variant={theme === 'light' ? 'default' : 'outline'}
@@ -289,25 +290,29 @@ export const SettingsView: React.FC = () => {
                   {m['settings.appearance.dark']()}
                 </Button>
 
-                <Button
-                  type="button"
-                  variant={theme === 'gameboy' ? 'default' : 'outline'}
-                  onClick={() => dispatch(setTheme('gameboy'))}
-                  className="w-full"
-                >
-                  <Gamepad2 size={16} className="mr-1.5" />
-                  Game Boy
-                </Button>
+                {SHOW_RETRO_THEMES && (
+                  <>
+                    <Button
+                      type="button"
+                      variant={theme === 'gameboy' ? 'default' : 'outline'}
+                      onClick={() => dispatch(setTheme('gameboy'))}
+                      className="w-full"
+                    >
+                      <Gamepad2 size={16} className="mr-1.5" />
+                      Game Boy
+                    </Button>
 
-                <Button
-                  type="button"
-                  variant={theme === 'matrix' ? 'default' : 'outline'}
-                  onClick={() => dispatch(setTheme('matrix'))}
-                  className="w-full"
-                >
-                  <Terminal size={16} className="mr-1.5" />
-                  Matrix
-                </Button>
+                    <Button
+                      type="button"
+                      variant={theme === 'matrix' ? 'default' : 'outline'}
+                      onClick={() => dispatch(setTheme('matrix'))}
+                      className="w-full"
+                    >
+                      <Terminal size={16} className="mr-1.5" />
+                      Matrix
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
 

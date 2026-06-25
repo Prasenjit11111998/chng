@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Logo } from '../../Logo';
+import FloatingHeader from '../../ui/floating-header';
 import { ControlPanel } from './ControlPanel';
 import { PreviewGrid } from './PreviewGrid';
 import { DEFAULT_STATE, buildOutputSpecs } from './types';
@@ -87,23 +87,24 @@ export const LogoPackTool: React.FC = () => {
 
   return (
     <div className="lg-shell">
-      {/* ── Topbar ── */}
-      <div className="lg-topbar">
+      {/* ── Shared Floating Header ── */}
+      <div className="w-full px-4 pt-4 flex justify-center flex-shrink-0">
+        <FloatingHeader />
+      </div>
+
+      {/* ── Breadcrumb strip ── */}
+      <div className="lg-topbar lg-topbar--slim">
         <div className="lg-topbar__left">
-          <button
-            className="bg-accent text-on-accent border-none px-5 py-2 cursor-pointer flex items-center justify-center hover:opacity-90 pixel-btn flex-shrink-0"
-            onClick={() => navigate('/')}
-            aria-label="Go back to Chng home"
-          >
-            <Logo className="text-3xl lg:text-4xl font-black" />
-          </button>
-          <nav className="lg-breadcrumb" aria-label="Page location">
-            <button className="lg-breadcrumb__link" onClick={() => navigate('/studio')}>
+          <div className="flex items-center text-sm font-mono px-3 py-1 bg-panel-highlight pixel-box">
+            <button
+              onClick={() => navigate('/studio')}
+              className="text-muted hover:text-foreground cursor-pointer bg-transparent border-none p-0 font-mono transition-colors"
+            >
               Studio
             </button>
-            <span className="lg-breadcrumb__sep" aria-hidden="true">/</span>
-            <span className="lg-breadcrumb__current">Logo Pack</span>
-          </nav>
+            <span className="text-separator mx-2">/</span>
+            <span className="text-foreground">Logo Pack</span>
+          </div>
         </div>
       </div>
 
