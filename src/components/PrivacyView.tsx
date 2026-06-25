@@ -56,37 +56,7 @@ export const PrivacyView: React.FC<PrivacyViewProps> = ({ setView }) => {
             }}
           />
 
-          <h2 className="text-2xl mb-3 font-semibold">{m['privacy.donations.title']()}</h2>
-          <p
-            className="mb-4 text-muted-foreground"
-            dangerouslySetInnerHTML={{
-              __html: sanitize(
-                link(
-                  ['about_link', 'stripe_link'],
-                  m['privacy.donations.description'](),
-                  [
-                    '/about',
-                    'https://stripe.com/docs/disputes/prevention/advanced-fraud-detection',
-                  ],
-                  [false, true],
-                  ['text-primary hover:underline', 'text-primary hover:underline']
-                )
-              ),
-            }}
-          />
 
-          <h2 className="text-2xl mb-3 font-semibold">{m['privacy.conversion_errors.title']()}</h2>
-          <div className="mb-4 text-muted-foreground">
-            {m['privacy.conversion_errors.description']()}
-            <ul className="list-disc list-inside mt-2 mb-2 pl-4">
-              <li>{m['privacy.conversion_errors.list_job_id']()}</li>
-              <li>{m['privacy.conversion_errors.list_format_from']()}</li>
-              <li>{m['privacy.conversion_errors.list_format_to']()}</li>
-              <li>{m['privacy.conversion_errors.list_stderr']()}</li>
-              <li>{m['privacy.conversion_errors.list_video']()}</li>
-            </ul>
-            {m['privacy.conversion_errors.footer']()}
-          </div>
 
           <h3 className="text-xl mt-4 mb-2 font-semibold">{m['privacy.analytics.title']()}</h3>
           <p
@@ -130,7 +100,7 @@ export const PrivacyView: React.FC<PrivacyViewProps> = ({ setView }) => {
                 link(
                   ['email_link'],
                   m['privacy.contact.description'](),
-                  ['mailto:hello@chng.sh'],
+                  ['mailto:prasenjit.chakraborty1998@gmail.com'],
                   [false],
                   ['text-primary hover:underline']
                 )

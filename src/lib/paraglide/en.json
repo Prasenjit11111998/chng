@@ -285,25 +285,11 @@
 		"title": "Privacy Policy",
 		"summary": {
 			"title": "Summary",
-			"description": "Chng's privacy policy is very simple: we do not collect or store any data on you at all. We don't use cookies or trackers, analytics are completely private, and all conversions and compressions happen locally on your browser in WebAssembly. We use Stripe to process donations, which may collect some data used for fraud prevention."
+			"description": "Chng's privacy policy is very simple: we do not collect or store any data on you at all. We don't use cookies or trackers, analytics are completely private, and all conversions and compressions happen locally on your browser in WebAssembly. No files ever leave your device."
 		},
 		"conversions": {
 			"title": "Conversions",
 			"description": "All image conversions and compressions happen entirely locally on your device using WebAssembly (ImageMagick). This means your files never leave your device and we will never have access to them."
-		},
-		"donations": {
-			"title": "Donations",
-			"description": "We use Stripe on the [about_link]about[/about_link] page to collect donations. Stripe may collect certain information about the payment and device for fraud prevention as described in [stripe_link]their documentation on advanced fraud detection[/stripe_link]. External network requests to Stripe are deferred, and are only made after you click the button to pay."
-		},
-		"conversion_errors": {
-			"title": "Conversion Errors",
-			"description": "When a video conversion fails, we may collect some anonymous data to help us diagnose the issue. This data may include:",
-			"list_job_id": "The job ID, which is the anonymized file name",
-			"list_format_from": "The format you converted from",
-			"list_format_to": "The format you converted to",
-			"list_stderr": "The FFmpeg stderr output of your job (error message)",
-			"list_video": "The actual video file (if given explicit permission)",
-			"footer": "This information is used solely for the purpose of diagnosing conversion issues. The actual video file will only ever be collected if you give us permission to do so, where it will only be used for troubleshooting."
 		},
 		"analytics": {
 			"title": "Analytics",
@@ -311,13 +297,13 @@
 		},
 		"local_storage": {
 			"title": "Local Storage",
-			"description": "We use your browser's local storage to save your settings, and your browser's session storage to temporarily store the GitHub contributors list for the \"About\" section to reduce repeated GitHub API requests. No personal data is stored or transmitted.<br/><br/>The WebAssembly versions of the conversion tools we use (FFmpeg, ImageMagick, Pandoc) are also stored locally on your browser when you first visit the website, so you don't need to redownload them each visit. No personal data is stored or transmitted. You may view or delete this data at any time in the \"Privacy & data\" section in [settings_link]settings[/settings_link]."
+			"description": "We use your browser's local storage to save your settings, and your browser's session storage to temporarily store the GitHub contributors list for the \"About\" section to reduce repeated GitHub API requests. No personal data is stored or transmitted.<br/><br/>The WebAssembly version of the image engine we use (ImageMagick) is also stored locally on your browser when you first visit the website, so you don't need to redownload it each visit. No personal data is stored or transmitted. You may view or delete this data at any time in the \"Privacy & data\" section in [settings_link]settings[/settings_link]."
 		},
 		"contact": {
 			"title": "Contact",
-			"description": "For questions, email us at: [email_link]hello@chng.sh[/email_link]. If you are using a third-party instance of Chng, please contact the hoster of that instance instead."
+			"description": "For questions, email us at: [email_link]prasenjit.chakraborty1998@gmail.com[/email_link]. If you are using a third-party instance of Chng, please contact the hoster of that instance instead."
 		},
-		"last_updated": "Last updated: 2025-10-29"
+		"last_updated": "Last updated: 2026-06-25"
 	},
 	"toast": {
 		"insecure_context": "You are visiting Chng in an insecure context (e.g. accessing over HTTP instead of HTTPS). Some features may not work as expected."

@@ -5,7 +5,7 @@ export const GITHUB_URL_Chng = "https://github.com/Chng-sh/Chng";
 export const GITHUB_URL_ChngD = "https://github.com/Chng-sh/chngd";
 export const GITHUB_API_URL = "https://api.github.com/repos/Chng-sh/Chng";
 export const DISCORD_URL = "https://discord.gg/kqevGxYPak";
-export const CONTACT_EMAIL = "hello@chng.sh";
+export const CONTACT_EMAIL = "prasenjit.chakraborty1998@gmail.com";
 export const CHNG_NAME =
 	pubEnv === "development"
 		? "Chng Local"
