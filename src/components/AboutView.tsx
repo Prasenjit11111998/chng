@@ -128,7 +128,7 @@ export const AboutView: React.FC = () => {
           </h2>
           <div className="flex gap-4 w-full flex-wrap">
             <a
-              href={GITHUB_URL_Chng}
+              href="https://github.com/Prasenjit11111998/chng"
               target="_blank"
               rel="noopener noreferrer"
               className="btn w-full gap-2 p-3 bg-button text-foreground flex items-center justify-center text-sm font-semibold border-none"

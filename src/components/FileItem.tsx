@@ -4,6 +4,7 @@ import {
   removeFile,
   convertSingleFile,
   updateFileTo,
+  setError,
   ChngFileState,
 } from '../store/filesSlice';
 import Panel from './Panel';
@@ -45,6 +46,10 @@ export const FileItem: React.FC<FileItemProps> = ({ file, index }) => {
   const isDocument = ['.docx', '.doc', '.pdf', '.md', '.txt'].includes(ext);
 
   const handleConvert = () => {
+    // Clear any previous error so the button re-enables cleanly
+    if (file.error) {
+      dispatch(setError({ id: file.id, error: '' }));
+    }
     // @ts-expect-error thunk action
     dispatch(convertSingleFile(file.id));
   };
@@ -107,16 +112,29 @@ export const FileItem: React.FC<FileItemProps> = ({ file, index }) => {
             >
               {file.name}
             </p>
-            <span className="text-xs text-muted font-mono mt-0.5">
-              {formatSize(file.size)}
-            </span>
+            {file.error ? (
+              <span
+                className="text-xs text-failure font-mono mt-0.5 overflow-hidden text-ellipsis whitespace-nowrap"
+                title={file.error}
+              >
+                {file.error.length > 48 ? file.error.slice(0, 48) + '…' : file.error}
+              </span>
+            ) : (
+              <span className="text-xs text-muted font-mono mt-0.5">
+                {formatSize(file.size)}
+              </span>
+            )}
           </div>
         </div>
 
         {/* Success/Error status indicator moved to the right of the name box */}
         <div className="flex-shrink-0 mr-1 sm:mr-3">
           {file.result && <PixelTick className="text-success" />}
-          {file.error && <PixelCross className="text-failure" />}
+          {file.error && (
+            <span title={file.error} aria-label={`Conversion failed: ${file.error}`}>
+              <PixelCross className="text-failure" />
+            </span>
+          )}
         </div>
       </div>
 
@@ -145,22 +163,28 @@ export const FileItem: React.FC<FileItemProps> = ({ file, index }) => {
             />
           </div>
         )}
-        {/* Convert button — 44px touch target */}
+        {/* Convert / Retry button — 44px touch target */}
         <button
           type="button"
           className={`btn px-2.5 h-11 flex items-center justify-center gap-1.5 border-none min-w-[44px] transition-all duration-200 ${
-            (file.processing || !!file.result)
+            file.processing
               ? 'opacity-30 cursor-not-allowed bg-transparent text-muted'
+              : file.result
+              ? 'opacity-30 cursor-not-allowed bg-transparent text-muted'
+              : file.error
+              ? 'highlight text-on-accent cursor-pointer'
               : 'highlight text-on-accent cursor-pointer'
           }`}
           onClick={handleConvert}
           disabled={file.processing || !!file.result}
-          aria-label={`Convert ${file.name}`}
-          title={m["convert.tooltips.convert_file"]()}
+          aria-label={file.error ? `Retry converting ${file.name}` : `Convert ${file.name}`}
+          title={file.error ? 'Retry conversion' : m["convert.tooltips.convert_file"]()}
         >
           <RotateCwIcon size={16} className={file.processing ? 'animate-spin' : ''} />
           {!file.processing && (
-            <span className="text-xs font-bold font-mono max-sm:hidden">Go</span>
+            <span className="text-xs font-bold font-mono max-sm:hidden">
+              {file.error ? 'Retry' : 'Go'}
+            </span>
           )}
         </button>
 
