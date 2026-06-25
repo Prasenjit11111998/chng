@@ -21,6 +21,7 @@ import { Button } from './ui/button';
 import { m } from '../lib/paraglide/messages';
 import { ToastManager } from '../lib/util/toast';
 import { X as XIcon, Minimize2, Download as DownloadIcon, RefreshCw, Trash2 } from 'lucide-react';
+import { converters } from '../lib/converters';
 
 const formatSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes';
@@ -120,6 +121,20 @@ export const CompressorView: React.FC = () => {
   const ready = useSelector(selectCompressorReady);
   const results = useSelector(selectCompressorResults);
   const dispatch = useDispatch();
+
+  const magick = converters.find((c) => c.name === "imagemagick");
+  const [isEngineReady, setIsEngineReady] = useState(magick?.status === 'ready');
+
+  useEffect(() => {
+    if (!magick) return;
+    const updateStatus = (_name: string, status: any) => {
+      setIsEngineReady(status === 'ready');
+    };
+    magick.addStatusListener(updateStatus);
+    return () => {
+      magick.removeStatusListener(updateStatus);
+    };
+  }, [magick]);
 
   const [unitMap, setUnitMap] = useState<Record<string, 'B' | 'KB' | 'MB'>>({});
 
@@ -323,12 +338,14 @@ export const CompressorView: React.FC = () => {
                   {/* Processing indicator */}
                   {file.processing && (
                     <div className="flex flex-col gap-1.5 w-24 sm:w-36 flex-shrink-0">
-                      <span className="text-xxs text-muted animate-pulse font-mono">compressing...</span>
+                      <span className="text-xxs text-muted animate-pulse font-mono">
+                        {isEngineReady ? 'compressing...' : 'Initialising engine...'}
+                      </span>
                       <ProgressBar
                         progress={file.progress}
                         min={0}
                         max={100}
-                        label={`Compressing ${file.name}`}
+                        label={isEngineReady ? `Compressing ${file.name}` : `Initialising engine for ${file.name}`}
                       />
                     </div>
                   )}

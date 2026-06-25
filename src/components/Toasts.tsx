@@ -36,7 +36,7 @@ export const Toasts: React.FC = () => {
         return (
           <div key={toast.id} className="flex justify-end pointer-events-auto">
             <div
-              className={`flex flex-row items-center justify-between w-full max-w-[100%] md:max-w-md p-4 gap-4 ${styleClass} border-l-4 rounded-lg shadow-md transition-all duration-300`}
+              className={`flex flex-row items-center justify-between w-full max-w-[100%] md:max-w-md p-4 gap-4 ${styleClass} pixel-box shadow-panel rounded-none transition-all duration-300`}
             >
               <div className="flex items-center gap-2">
                 <Icon

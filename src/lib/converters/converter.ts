@@ -27,6 +27,16 @@ export class Converter {
 	public readonly reportsProgress: boolean = false;
 
 	public onStatusChange?: (name: string, status: WorkerStatus) => void;
+	private statusListeners: ((name: string, status: WorkerStatus) => void)[] = [];
+
+	public addStatusListener(listener: (name: string, status: WorkerStatus) => void) {
+		this.statusListeners.push(listener);
+		listener(this.name, this._status);
+	}
+
+	public removeStatusListener(listener: (name: string, status: WorkerStatus) => void) {
+		this.statusListeners = this.statusListeners.filter(l => l !== listener);
+	}
 
 	public get status() {
 		return this._status;
@@ -37,6 +47,7 @@ export class Converter {
 		if (this.onStatusChange) {
 			this.onStatusChange(this.name, val);
 		}
+		this.statusListeners.forEach(l => l(this.name, val));
 	}
 
 	private timeoutId?: any;

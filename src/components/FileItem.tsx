@@ -10,7 +10,7 @@ import {
 import Panel from './Panel';
 import ProgressBar from './ProgressBar';
 import FormatDropdown from './FormatDropdown';
-import { categories } from '../lib/converters';
+import { converters, categories } from '../lib/converters';
 import { vertFileRegistry } from '../store/filesSlice';
 import { m } from '../lib/paraglide/messages';
 import {
@@ -38,6 +38,20 @@ const formatSize = (bytes: number): string => {
 
 export const FileItem: React.FC<FileItemProps> = ({ file, index }) => {
   const dispatch = useDispatch();
+
+  const magick = converters.find((c) => c.name === "imagemagick");
+  const [isEngineReady, setIsEngineReady] = React.useState(magick?.status === 'ready');
+
+  React.useEffect(() => {
+    if (!magick) return;
+    const updateStatus = (_name: string, status: any) => {
+      setIsEngineReady(status === 'ready');
+    };
+    magick.addStatusListener(updateStatus);
+    return () => {
+      magick.removeStatusListener(updateStatus);
+    };
+  }, [magick]);
 
   // Determine media category
   const ext = file.from.toLowerCase();
@@ -143,13 +157,13 @@ export const FileItem: React.FC<FileItemProps> = ({ file, index }) => {
         {file.processing ? (
           <div className="flex-grow sm:flex-grow-0 w-28 sm:w-36 flex flex-col gap-1.5 justify-center">
             <span className="text-xxs text-muted font-normal animate-pulse font-mono">
-              Converting...
+              {isEngineReady ? 'Converting...' : 'Initialising engine...'}
             </span>
             <ProgressBar
               progress={file.progress}
               min={0}
               max={100}
-              label={`Converting ${file.name}`}
+              label={isEngineReady ? `Converting ${file.name}` : `Initialising engine for ${file.name}`}
             />
           </div>
         ) : (
