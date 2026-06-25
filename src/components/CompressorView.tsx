@@ -181,7 +181,7 @@ export const CompressorView: React.FC = () => {
   const isProcessingAny = files.some((f) => f.processing);
 
   return (
-    <div className="flex flex-col justify-center items-center gap-6 px-4 md:p-0 max-w-[778px] mx-auto w-full pb-20">
+    <div className="flex flex-col justify-center items-center gap-6 px-4 md:p-0 max-w-[778px] mx-auto w-full pb-6 md:pb-20">
       {/* Screen reader live region for status announcements */}
       <div
         ref={announcerRef}

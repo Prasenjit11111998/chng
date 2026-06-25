@@ -78,7 +78,7 @@ export const SettingsView: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full items-center max-w-3xl w-full mx-auto px-4 pb-20">
+    <div className="flex flex-col h-full items-center max-w-3xl w-full mx-auto px-4 pb-6 md:pb-20">
       <h1 className="text-4xl tracking-tight leading-[72px] mb-6 flex items-center gap-2 text-foreground font-bold font-display">
         <Settings size={36} className="text-foreground" />
         {m['settings.title']()}

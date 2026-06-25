@@ -328,7 +328,7 @@ export const App: React.FC = () => {
             </div>
 
             {/* Page Content Area */}
-            <div className="flex-grow pb-16 pt-4 md:pt-6 flex flex-col justify-start">
+            <div className="flex-grow pb-4 md:pb-16 pt-4 md:pt-6 flex flex-col justify-start">
               {renderView()}
             </div>
 

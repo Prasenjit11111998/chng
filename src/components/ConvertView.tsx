@@ -13,7 +13,7 @@ export const ConvertView: React.FC<ConvertViewProps> = ({ onViewChange }) => {
   const files = useSelector(selectFiles);
 
   return (
-    <div className="flex flex-col justify-center items-center gap-8 px-4 md:p-0 max-w-[778px] mx-auto w-full pb-20">
+    <div className="flex flex-col justify-center items-center gap-8 px-4 md:p-0 max-w-[778px] mx-auto w-full pb-6 md:pb-20">
       <div className="w-full">
         <ConversionPanel />
       </div>

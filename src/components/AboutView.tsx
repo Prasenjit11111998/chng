@@ -31,7 +31,7 @@ const GithubIcon: React.FC<{ size?: number; className?: string }> = ({ size = 18
 
 export const AboutView: React.FC = () => {
   return (
-    <div className="flex flex-col h-full items-center max-w-4xl w-full mx-auto px-6 pb-20 animate-fade-in">
+    <div className="flex flex-col h-full items-center max-w-4xl w-full mx-auto px-6 pb-6 md:pb-20 animate-fade-in">
       <h1 className="text-4xl tracking-tight leading-[72px] mb-6 flex items-center gap-2 text-foreground font-display font-bold">
         <InfoIcon size={36} className="text-foreground" />
         About Chng
