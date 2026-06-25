@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState, updateSettings, setTheme, setEffects, resetSettings } from '../store';
+import { RootState, updateSettings, setTheme, setEffects, resetSettings, showDialog } from '../store';
 import { SHOW_RETRO_THEMES } from '../store/settingsSlice';
+import { ToastManager } from '../lib/util/toast';
 import Panel from './Panel';
 import FancyInput from './FancyInput';
 import FormatDropdown from './FormatDropdown';
@@ -21,12 +22,29 @@ import {
   ShieldCheck,
   Trash2,
   Gamepad2,
-  Terminal
+  Terminal,
+  SlidersHorizontal
 } from 'lucide-react';
 
 export const SettingsView: React.FC = () => {
   const { theme, effects: effectsEnabled, settings } = useSelector((state: RootState) => state.settings);
   const dispatch = useDispatch();
+
+  const [clickCount, setClickCount] = useState(0);
+  const [retroUnlocked, setRetroUnlocked] = useState(false);
+
+  const handleHeaderClick = () => {
+    if (retroUnlocked) return;
+    const nextCount = clickCount + 1;
+    setClickCount(nextCount);
+    if (nextCount >= 5) {
+      setRetroUnlocked(true);
+      ToastManager.add({
+        type: 'success',
+        message: '🎮 Retro Themes Unlocked! Game Boy and Matrix modes are now selectable.',
+      });
+    }
+  };
 
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [cacheInfo, setCacheInfo] = useState<CacheInfo | null>(null);
@@ -55,13 +73,27 @@ export const SettingsView: React.FC = () => {
   }, []);
 
   const handleClearAllData = () => {
-    if (window.confirm(m['settings.privacy.clear_all_data_confirm']())) {
-      dispatch(resetSettings());
-      swManager.clearCache();
-      localStorage.clear();
-      sessionStorage.clear();
-      window.location.href = '/';
-    }
+    dispatch(showDialog(
+      m['settings.privacy.clear_all_data']?.() || 'Clear All Site Data',
+      m['settings.privacy.clear_all_data_confirm'](),
+      [
+        {
+          text: 'Cancel',
+          action: () => {}
+        },
+        {
+          text: 'Clear Everything',
+          action: () => {
+            dispatch(resetSettings());
+            swManager.clearCache();
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = '/';
+          }
+        }
+      ],
+      'warning'
+    ) as any);
   };
 
   const clearCache = async () => {
@@ -79,7 +111,11 @@ export const SettingsView: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full items-center max-w-3xl w-full mx-auto px-4 pb-6 md:pb-20">
-      <h1 className="text-4xl tracking-tight leading-[72px] mb-6 flex items-center gap-2 text-foreground font-bold font-display">
+      <h1 
+        onClick={handleHeaderClick}
+        className="text-4xl tracking-tight leading-[72px] mb-6 flex items-center gap-2 text-foreground font-bold font-display cursor-pointer select-none active:scale-95 transition-transform duration-100"
+        title="Click 5 times for a retro surprise"
+      >
         <Settings size={36} className="text-foreground" />
         {m['settings.title']()}
       </h1>
@@ -89,7 +125,7 @@ export const SettingsView: React.FC = () => {
         <Panel className="p-6 w-full">
           <div className="flex flex-col gap-6 w-full">
             <h2 className="text-xl font-bold flex items-center gap-2 text-foreground">
-              <RefreshCw size={32} className="bg-accent p-1.5 rounded-full text-on-accent animate-spin-slow" />
+              <SlidersHorizontal size={32} className="bg-accent p-1.5 rounded-full text-on-accent" />
               {m['settings.conversion.title']()}
             </h2>
 
@@ -269,7 +305,7 @@ export const SettingsView: React.FC = () => {
                 </span>
               </div>
 
-              <div className={SHOW_RETRO_THEMES ? "grid grid-cols-2 sm:grid-cols-4 gap-2 w-full" : "grid grid-cols-2 gap-2 w-full"}>
+              <div className={(SHOW_RETRO_THEMES || retroUnlocked) ? "grid grid-cols-2 sm:grid-cols-4 gap-2 w-full" : "grid grid-cols-2 gap-2 w-full"}>
                 <Button
                   type="button"
                   variant={theme === 'light' ? 'default' : 'outline'}
@@ -290,7 +326,7 @@ export const SettingsView: React.FC = () => {
                   {m['settings.appearance.dark']()}
                 </Button>
 
-                {SHOW_RETRO_THEMES && (
+                {(SHOW_RETRO_THEMES || retroUnlocked) && (
                   <>
                     <Button
                       type="button"

@@ -27,6 +27,9 @@ Chng is a premium, client-side, local-first image processing toolkit and design 
 - **ZIP Extraction**: Drop a `.zip` archive — Chng extracts, detects, and converts all images inside.
 - **Batch Processing**: Concurrent worker pool sized relative to hardware concurrency.
 - **Drag & Drop + Paste**: Drop files anywhere or paste from clipboard.
+- **Failsafe Queue Clearing**: Clicking "Clear All" displays an inline 4-second countdown toast allowing the user to undo the action before files are purged.
+- **Interactive Error Recovery**: Failed conversions show truncated, readable error messages below the filename with native hover tooltips and a direct click-to-retry button.
+- **WASM Engine Status**: Real-time feedback ("Initialising engine...") during the initial cold start of the WebAssembly container.
 
 ### 2. Image Compressor
 - **Target-Size Optimization**: Set a target (e.g. `150 KB`) — the algorithm adjusts quality and scale to hit it.
@@ -35,6 +38,7 @@ Chng is a premium, client-side, local-first image processing toolkit and design 
   - Reduces quality `8%` per step; drops scale `5%` if quality < 15%.
   - Stops when target is reached or hard limits (scale < 20%, quality < 10%) are hit.
 - **Format Fallbacks**: PNG/BMP/GIF are auto-converted to JPEG for lossy compression.
+- **WASM Engine Status**: Real-time feedback ("Initialising engine...") while the WebAssembly container loads cold.
 
 ### 3. Studio — Design Toolkit
 
