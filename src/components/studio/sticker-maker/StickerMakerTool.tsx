@@ -197,7 +197,8 @@ export const StickerMakerTool: React.FC = () => {
           const img = await getResizedImage(sticker.originalSrc);
           if (!isProcessingRef.current) return;
 
-          const segmentedUrls = await segmentStickers(img, addBorder, borderSize);
+          const segmentedUrls = await segmentStickers(img, addBorder, borderSize < 2 ? 5 : Math.min(15, borderSize));
+          if (segmentedUrls.length === 0) throw new Error('No elements found');
 
           const results: Sticker[] = segmentedUrls.map((url, idx) => ({
             id: `${sticker.id}-${idx}`,
@@ -265,7 +266,12 @@ export const StickerMakerTool: React.FC = () => {
     });
     setStickers([]);
     setLinkInput('');
+    setBorderSize(5);
+    setAddBorder(true);
+    setFormat('png');
     setIsDone(false);
+    setProgressLabel('');
+    setProgressPct(0);
     ToastManager.add({ type: 'info', message: 'Workspace reset' });
   };
 
@@ -382,7 +388,7 @@ export const StickerMakerTool: React.FC = () => {
                     type="text" 
                     value={linkInput}
                     onChange={(e) => setLinkInput(e.target.value)}
-                    placeholder="Paste image or Pinterest URL..." 
+                    placeholder="Paste URL" 
                     className="lp-text-input"
                     style={{ flex: 1 }}
                     disabled={isFetchingLink}
@@ -421,8 +427,13 @@ export const StickerMakerTool: React.FC = () => {
                       type="number" 
                       min="2" 
                       max="15" 
-                      value={borderSize} 
-                      onChange={e => setBorderSize(parseInt(e.target.value) || 5)}
+                      value={borderSize || ''} 
+                      onChange={e => {
+                        const raw = e.target.value;
+                        if (raw === '') { setBorderSize(0); return; }
+                        const num = parseInt(raw, 10);
+                        if (!isNaN(num)) setBorderSize(num);
+                      }}
                       className="lg-num-input" 
                     />
                     <span className="lg-inline-label">px</span>
@@ -488,7 +499,7 @@ export const StickerMakerTool: React.FC = () => {
                 <ImageIcon className="w-12 h-12 lp-empty__icon" />
                 <h3 className="lp-empty__heading">Create Transparent Stickers</h3>
                 <p className="lp-empty__sub">
-                  Upload images or paste Pinterest links. The tool automatically runs a local WASM model in your browser to remove backgrounds and isolate elements.
+                  Upload images or paste Pinterest links. The tool automatically detects and extracts individual elements from your images.
                 </p>
               </div>
             ) : (
@@ -535,8 +546,8 @@ export const StickerMakerTool: React.FC = () => {
                           </div>
                         ) : sticker.status === 'pending' ? (
                           <>
-                            <div className="absolute top-2 left-2 bg-[#ffaa00] text-black text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-sm z-10">
-                              QUEUED
+                            <div className="absolute top-2 left-2 bg-[#2ea87a] text-white text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-sm z-10">
+                              ADDED
                             </div>
                             <img src={sticker.originalSrc} alt="Queued source" className="lp-card__img object-contain p-2 opacity-50" />
                           </>
@@ -544,7 +555,7 @@ export const StickerMakerTool: React.FC = () => {
                           <>
                             {sticker.selected && (
                               <div className="sm-sticker-badge bg-accent text-on-accent">
-                                <PixelTick color="#ffffff" />
+                                <PixelTick color="#2ea87a" />
                               </div>
                             )}
                             <img src={sticker.processedSrc!} alt="Sticker" className="lp-card__img object-contain p-2" />

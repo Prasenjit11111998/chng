@@ -1,10 +1,3 @@
-export interface BBox {
-  minX: number;
-  minY: number;
-  maxX: number;
-  maxY: number;
-}
-
 export const loadImage = (src: string): Promise<HTMLImageElement> =>
   new Promise((resolve, reject) => {
     const img = new Image();
@@ -24,10 +17,37 @@ export const removeBackgroundMagicWand = (canvas: HTMLCanvasElement): void => {
   const visited = new Uint8Array(totalPixels);
   const queue: [number, number][] = [];
 
+  const sampleSize = Math.min(10, Math.floor(Math.min(width, height) / 4));
+  let bgR = 0, bgG = 0, bgB = 0, sampleCount = 0;
+  const sampleCorners = [
+    { x: 0, y: 0 },
+    { x: width - sampleSize, y: 0 },
+    { x: 0, y: height - sampleSize },
+    { x: width - sampleSize, y: height - sampleSize },
+  ];
+  for (const { x: cx, y: cy } of sampleCorners) {
+    for (let y = cy; y < cy + sampleSize && y < height; y++) {
+      for (let x = cx; x < cx + sampleSize && x < width; x++) {
+        const idx = (y * width + x) * 4;
+        bgR += data[idx];
+        bgG += data[idx + 1];
+        bgB += data[idx + 2];
+        sampleCount++;
+      }
+    }
+  }
+  bgR = Math.round(bgR / sampleCount);
+  bgG = Math.round(bgG / sampleCount);
+  bgB = Math.round(bgB / sampleCount);
+  const bgThreshold = 50;
+
   const isBackground = (x: number, y: number) => {
     const idx = (y * width + x) * 4;
     if (data[idx + 3] < 50) return true;
-    return data[idx] > 210 && data[idx + 1] > 210 && data[idx + 2] > 210;
+    const dr = Math.abs(data[idx] - bgR);
+    const dg = Math.abs(data[idx + 1] - bgG);
+    const db = Math.abs(data[idx + 2] - bgB);
+    return dr < bgThreshold && dg < bgThreshold && db < bgThreshold;
   };
 
   for (let x = 0; x < width; x++) {
@@ -109,10 +129,17 @@ export const segmentStickers = (
     if (!ctx) return resolve([]);
     ctx.drawImage(img, 0, 0);
 
-    removeBackgroundMagicWand(canvas);
-
     const { width, height } = canvas;
-    const scale = Math.min(1.0, 250 / Math.max(width, height));
+    const checkSample = ctx.getImageData(0, 0, Math.min(width, 200), Math.min(height, 200));
+    let transparentPixels = 0;
+    for (let i = 3; i < checkSample.data.length; i += 4) {
+      if (checkSample.data[i] === 0) transparentPixels++;
+    }
+    if (transparentPixels < 10) {
+      removeBackgroundMagicWand(canvas);
+    }
+
+    const scale = Math.min(1.0, 600 / Math.max(width, height));
     const sw = Math.round(width * scale);
     const sh = Math.round(height * scale);
 
@@ -132,41 +159,22 @@ export const segmentStickers = (
       grid[i] = data[i * 4 + 3] > 15 ? 1 : 0;
     }
 
-    const dilated = new Uint8Array(totalSW);
-    const targetDilationPixels = 2;
-    const radius = Math.max(0, Math.round(targetDilationPixels * scale));
-
-    for (let y = 0; y < sh; y++) {
-      for (let x = 0; x < sw; x++) {
-        if (grid[y * sw + x] === 1) {
-          if (radius === 0) {
-            dilated[y * sw + x] = 1;
-            continue;
-          }
-          for (let dy = -radius; dy <= radius; dy++) {
-            for (let dx = -radius; dx <= radius; dx++) {
-              const nx = x + dx;
-              const ny = y + dy;
-              if (nx >= 0 && nx < sw && ny >= 0 && ny < sh) {
-                if (dx * dx + dy * dy <= radius * radius) {
-                  dilated[ny * sw + nx] = 1;
-                }
-              }
-            }
-          }
-        }
-      }
+    // ── Phase 2: Per-pixel component labeling ──
+    const labels = new Uint32Array(totalSW);
+    interface Comp {
+      id: number;
+      minX: number; minY: number; maxX: number; maxY: number;
+      pixelCount: number;
     }
-
-    const visited = new Uint8Array(totalSW);
-    const bboxes: BBox[] = [];
+    const components: Comp[] = [];
+    let nextId = 1;
 
     for (let y = 0; y < sh; y++) {
       for (let x = 0; x < sw; x++) {
         const idx = y * sw + x;
-        if (dilated[idx] === 1 && !visited[idx]) {
+        if (grid[idx] === 1 && labels[idx] === 0) {
           const segQueue: [number, number][] = [[x, y]];
-          visited[idx] = 1;
+          labels[idx] = nextId;
           let minX = x, maxX = x, minY = y, maxY = y;
           let head = 0;
           while (head < segQueue.length) {
@@ -179,48 +187,201 @@ export const segmentStickers = (
             for (const [nx, ny] of neighbors) {
               if (nx >= 0 && nx < sw && ny >= 0 && ny < sh) {
                 const nidx = ny * sw + nx;
-                if (dilated[nidx] === 1 && !visited[nidx]) {
-                  visited[nidx] = 1;
+                if (grid[nidx] === 1 && labels[nidx] === 0) {
+                  labels[nidx] = nextId;
                   segQueue.push([nx, ny]);
                 }
               }
             }
           }
 
+          const pixelCount = head;
           const pad = 4;
           const origMinX = Math.max(0, Math.floor(minX / scale) - pad);
           const origMinY = Math.max(0, Math.floor(minY / scale) - pad);
           const origMaxX = Math.min(width - 1, Math.ceil(maxX / scale) + pad);
           const origMaxY = Math.min(height - 1, Math.ceil(maxY / scale) + pad);
-          const origW = origMaxX - origMinX + 1;
-          const origH = origMaxY - origMinY + 1;
 
-          if (origW >= 20 && origH >= 20) {
-            bboxes.push({ minX: origMinX, minY: origMinY, maxX: origMaxX, maxY: origMaxY });
+          if (origMaxX - origMinX + 1 >= 20 && origMaxY - origMinY + 1 >= 20) {
+            components.push({ id: nextId, minX: origMinX, minY: origMinY, maxX: origMaxX, maxY: origMaxY, pixelCount });
+          }
+          nextId++;
+        }
+      }
+    }
+
+    // ── Phase 3: Erosion-based watershed splitting ──
+    for (const comp of components) {
+      if (comp.pixelCount < 50) continue;
+
+      const mask = new Uint8Array(totalSW);
+      for (let i = 0; i < totalSW; i++) {
+        mask[i] = labels[i] === comp.id ? 1 : 0;
+      }
+
+      const eroded = new Uint8Array(totalSW);
+      for (let gy = 0; gy < sh; gy++) {
+        for (let gx = 0; gx < sw; gx++) {
+          const gIdx = gy * sw + gx;
+          if (mask[gIdx] === 1) {
+            let allOn = true;
+            for (let dy = -1; dy <= 1 && allOn; dy++) {
+              for (let dx = -1; dx <= 1 && allOn; dx++) {
+                const nx = gx + dx, ny = gy + dy;
+                if (nx >= 0 && nx < sw && ny >= 0 && ny < sh) {
+                  if (mask[ny * sw + nx] === 0) allOn = false;
+                }
+              }
+            }
+            if (allOn) eroded[gIdx] = 1;
+          }
+        }
+      }
+
+      const erodedLabels = new Uint32Array(totalSW);
+      const erodedCentroids: { cx: number; cy: number }[] = [];
+
+      for (let gy = 0; gy < sh; gy++) {
+        for (let gx = 0; gx < sw; gx++) {
+          const gIdx = gy * sw + gx;
+          if (eroded[gIdx] === 1 && erodedLabels[gIdx] === 0) {
+            const eq: [number, number][] = [[gx, gy]];
+            erodedLabels[gIdx] = erodedCentroids.length + 1;
+            let sx = gx, sy = gy, cnt = 1;
+            let head = 0;
+            while (head < eq.length) {
+              const [cx, cy] = eq[head++];
+              for (const [nx, ny] of [[cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]]) {
+                if (nx >= 0 && nx < sw && ny >= 0 && ny < sh) {
+                  const nIdx = ny * sw + nx;
+                  if (eroded[nIdx] === 1 && erodedLabels[nIdx] === 0) {
+                    erodedLabels[nIdx] = erodedCentroids.length + 1;
+                    sx += nx; sy += ny; cnt++;
+                    eq.push([nx, ny]);
+                  }
+                }
+              }
+            }
+            erodedCentroids.push({ cx: sx / cnt, cy: sy / cnt });
+          }
+        }
+      }
+
+      if (erodedCentroids.length < 2) continue;
+
+      for (let gy = 0; gy < sh; gy++) {
+        for (let gx = 0; gx < sw; gx++) {
+          const gIdx = gy * sw + gx;
+          if (labels[gIdx] === comp.id && erodedLabels[gIdx] === 0) {
+            let minDist = Infinity;
+            let nearest = 0;
+            for (let ei = 0; ei < erodedCentroids.length; ei++) {
+              const dx = gx - erodedCentroids[ei].cx;
+              const dy = gy - erodedCentroids[ei].cy;
+              const d = dx * dx + dy * dy;
+              if (d < minDist) { minDist = d; nearest = ei + 1; }
+            }
+            erodedLabels[gIdx] = nearest;
+          }
+        }
+      }
+
+      for (let i = 0; i < totalSW; i++) {
+        if (erodedLabels[i] > 0) {
+          labels[i] = nextId + (erodedLabels[i] - 1);
+        }
+      }
+      nextId += erodedCentroids.length;
+    }
+
+    // ── Rebuild component list from final labels ──
+    const finalComps = new Map<number, { minX: number; minY: number; maxX: number; maxY: number }>();
+    for (let gy = 0; gy < sh; gy++) {
+      for (let gx = 0; gx < sw; gx++) {
+        const label = labels[gy * sw + gx];
+        if (label > 0) {
+          let c = finalComps.get(label);
+          if (!c) {
+            finalComps.set(label, { minX: gx, minY: gy, maxX: gx, maxY: gy });
+          } else {
+            if (gx < c.minX) c.minX = gx;
+            if (gx > c.maxX) c.maxX = gx;
+            if (gy < c.minY) c.minY = gy;
+            if (gy > c.maxY) c.maxY = gy;
           }
         }
       }
     }
 
+    const pad = 4;
+    const bboxes: { origMinX: number; origMinY: number; origMaxX: number; origMaxY: number; label: number }[] = [];
+    for (const [label, c] of finalComps) {
+      const origMinX = Math.max(0, Math.floor(c.minX / scale) - pad);
+      const origMinY = Math.max(0, Math.floor(c.minY / scale) - pad);
+      const origMaxX = Math.min(width - 1, Math.ceil(c.maxX / scale) + pad);
+      const origMaxY = Math.min(height - 1, Math.ceil(c.maxY / scale) + pad);
+      if (origMaxX - origMinX + 1 >= 20 && origMaxY - origMinY + 1 >= 20) {
+        bboxes.push({ origMinX, origMinY, origMaxX, origMaxY, label });
+      }
+    }
+
+    // ── Crop with alpha mask + contour smoothing ──
     const stickerUrls: string[] = [];
-    bboxes.forEach(box => {
-      const w = box.maxX - box.minX + 1;
-      const h = box.maxY - box.minY + 1;
+    for (const { origMinX, origMinY, origMaxX, origMaxY, label } of bboxes) {
+      const w = origMaxX - origMinX + 1;
+      const h = origMaxY - origMinY + 1;
       const cropCanvas = document.createElement('canvas');
       cropCanvas.width = w;
       cropCanvas.height = h;
       const cropCtx = cropCanvas.getContext('2d');
-      if (cropCtx) {
-        cropCtx.drawImage(canvas, box.minX, box.minY, w, h, 0, 0, w, h);
-        let finalCanvas = cropCanvas;
-        if (addBorderEnabled) {
-          finalCanvas = addWhiteOutline(cropCanvas, borderSize);
-        }
-        stickerUrls.push(finalCanvas.toDataURL('image/png'));
-      }
-    });
+      if (!cropCtx) continue;
 
-    resolve(stickerUrls.length > 0 ? stickerUrls : [canvas.toDataURL('image/png')]);
+      cropCtx.drawImage(canvas, origMinX, origMinY, w, h, 0, 0, w, h);
+
+      const cropData = cropCtx.getImageData(0, 0, w, h);
+      const cropPixels = cropData.data;
+
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const gx = Math.round((origMinX + x) * scale);
+          const gy = Math.round((origMinY + y) * scale);
+          if (labels[gy * sw + gx] !== label) {
+            cropPixels[(y * w + x) * 4 + 3] = 0;
+          }
+        }
+      }
+
+      // 3x3 box blur on alpha for smooth edges
+      const alphaCopy = new Uint8Array(w * h);
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          let sum = 0, count = 0;
+          for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+              const ny = y + dy, nx = x + dx;
+              if (ny >= 0 && ny < h && nx >= 0 && nx < w) {
+                sum += cropPixels[(ny * w + nx) * 4 + 3];
+                count++;
+              }
+            }
+          }
+          alphaCopy[y * w + x] = Math.round(sum / count);
+        }
+      }
+      for (let i = 0; i < w * h; i++) {
+        cropPixels[i * 4 + 3] = alphaCopy[i];
+      }
+
+      cropCtx.putImageData(cropData, 0, 0);
+
+      let finalCanvas = cropCanvas;
+      if (addBorderEnabled) {
+        finalCanvas = addWhiteOutline(cropCanvas, borderSize);
+      }
+      stickerUrls.push(finalCanvas.toDataURL('image/png'));
+    }
+
+    resolve(stickerUrls.length > 0 ? stickerUrls : []);
   });
 
 export const convertToWebP = (blob: Blob): Promise<Blob> =>
