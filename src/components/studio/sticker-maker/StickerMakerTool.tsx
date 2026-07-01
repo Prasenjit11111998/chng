@@ -1,11 +1,12 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { removeBackground, Config } from '@imgly/background-removal';
 import { downloadZip } from 'client-zip';
 import FloatingHeader from '../../ui/floating-header';
 import ProgressBar from '../../ProgressBar';
-import { Trash2, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { Image as ImageIcon, Sparkles, XCircle } from 'lucide-react';
 import { ToastManager } from '../../../lib/util/toast';
+import { loadImage, segmentStickers, convertToWebP } from './sticker-maker-utils';
 import '../../../lib/css/logo-grid.css';
 import './sticker-maker.css';
 
@@ -15,13 +16,6 @@ interface Sticker {
   processedSrc: string | null;
   selected: boolean;
   status: 'pending' | 'processing' | 'done' | 'error';
-}
-
-interface BBox {
-  minX: number;
-  minY: number;
-  maxX: number;
-  maxY: number;
 }
 
 const PixelTick: React.FC<{ className?: string; color?: string }> = ({ className, color = '#2ea87a' }) => (
@@ -60,290 +54,63 @@ export const StickerMakerTool: React.FC = () => {
   const [progressPct, setProgressPct] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isProcessingRef = useRef(false);
+  const CONCURRENCY = 2;
+  const MAX_IMAGE_SIZE = 2000;
 
-  const loadImage = (src: string): Promise<HTMLImageElement> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => resolve(img);
-      img.onerror = reject;
-      img.src = src;
-    });
-  };
-
-  const removeBackgroundMagicWand = (canvas: HTMLCanvasElement) => {
+  const getResizedBlob = async (src: string): Promise<Blob | string> => {
+    const img = await loadImage(src);
+    if (img.width <= MAX_IMAGE_SIZE && img.height <= MAX_IMAGE_SIZE) {
+      return src;
+    }
+    const canvas = document.createElement('canvas');
+    const scale = Math.min(MAX_IMAGE_SIZE / img.width, MAX_IMAGE_SIZE / img.height);
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const width = canvas.width;
-    const height = canvas.height;
-    const imgData = ctx.getImageData(0, 0, width, height);
-    const data = imgData.data;
-
-    const visited = new Uint8Array(width * height);
-    const queue: [number, number][] = [];
-
-    const isBackground = (x: number, y: number) => {
-      const idx = (y * width + x) * 4;
-      const r = data[idx];
-      const g = data[idx + 1];
-      const b = data[idx + 2];
-      const a = data[idx + 3];
-      if (a < 50) return true; // Transparent is background
-      return r > 210 && g > 210 && b > 210; // Near-white is background
-    };
-
-    // Add all border pixels that are background to the queue
-    for (let x = 0; x < width; x++) {
-      if (isBackground(x, 0)) {
-        const idx = 0 * width + x;
-        if (!visited[idx]) { visited[idx] = 1; queue.push([x, 0]); }
-      }
-      if (isBackground(x, height - 1)) {
-        const idx = (height - 1) * width + x;
-        if (!visited[idx]) { visited[idx] = 1; queue.push([x, height - 1]); }
-      }
-    }
-    for (let y = 0; y < height; y++) {
-      if (isBackground(0, y)) {
-        const idx = y * width + 0;
-        if (!visited[idx]) { visited[idx] = 1; queue.push([0, y]); }
-      }
-      if (isBackground(width - 1, y)) {
-        const idx = y * width + (width - 1);
-        if (!visited[idx]) { visited[idx] = 1; queue.push([width - 1, y]); }
-      }
-    }
-
-    let head = 0;
-    while (head < queue.length) {
-      const [cx, cy] = queue[head++];
-      
-      const idx = (cy * width + cx) * 4;
-      data[idx + 3] = 0; // Turn alpha to 0 (fully transparent)
-
-      const neighbors = [
-        [cx + 1, cy],
-        [cx - 1, cy],
-        [cx, cy + 1],
-        [cx, cy - 1]
-      ];
-
-      for (const [nx, ny] of neighbors) {
-        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-          const nidx = ny * width + nx;
-          if (!visited[nidx] && isBackground(nx, ny)) {
-            visited[nidx] = 1;
-            queue.push([nx, ny]);
-          }
-        }
-      }
-    }
-
-    ctx.putImageData(imgData, 0, 0);
+    if (!ctx) return src;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return new Promise(resolve => canvas.toBlob(b => resolve(b || new Blob())));
   };
 
-  const addWhiteOutline = (srcCanvas: HTMLCanvasElement, thickness: number): HTMLCanvasElement => {
-    const width = srcCanvas.width;
-    const height = srcCanvas.height;
-    
-    const outCanvas = document.createElement('canvas');
-    outCanvas.width = width + thickness * 2;
-    outCanvas.height = height + thickness * 2;
-    const ctx = outCanvas.getContext('2d');
-    if (!ctx) return srcCanvas;
+  const CORS_PROXY = 'https://corsproxy.io/?';
 
-    // 1. Create a mask canvas of the original image filled with solid white
-    const maskCanvas = document.createElement('canvas');
-    maskCanvas.width = width;
-    maskCanvas.height = height;
-    const maskCtx = maskCanvas.getContext('2d');
-    if (maskCtx) {
-      maskCtx.drawImage(srcCanvas, 0, 0);
-      maskCtx.globalCompositeOperation = 'source-in';
-      maskCtx.fillStyle = '#ffffff';
-      maskCtx.fillRect(0, 0, width, height);
-    }
-
-    // 2. Draw the white mask multiple times in a circle to create the outline
-    for (let angle = 0; angle < 360; angle += 15) {
-      const rad = (angle * Math.PI) / 180;
-      const dx = Math.round(Math.cos(rad) * thickness);
-      const dy = Math.round(Math.sin(rad) * thickness);
-      ctx.drawImage(maskCanvas, thickness + dx, thickness + dy);
-    }
-
-    // 3. Draw the original image on top
-    ctx.drawImage(srcCanvas, thickness, thickness);
-
-    return outCanvas;
-  };
-
-  const segmentStickers = (img: HTMLImageElement): Promise<string[]> => {
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return resolve([]);
-      ctx.drawImage(img, 0, 0);
-
-      // Pre-process: Turn white/light background transparent using Magic Wand
-      removeBackgroundMagicWand(canvas);
-
-      const width = img.width;
-      const height = img.height;
-      
-      const scale = Math.min(1.0, 250 / Math.max(width, height));
-      const sw = Math.round(width * scale);
-      const sh = Math.round(height * scale);
-
-      const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = sw;
-      tempCanvas.height = sh;
-      const tempCtx = tempCanvas.getContext('2d');
-      if (!tempCtx) return resolve([canvas.toDataURL('image/png')]);
-      tempCtx.drawImage(canvas, 0, 0, sw, sh);
-
-      const imgData = tempCtx.getImageData(0, 0, sw, sh);
-      const data = imgData.data;
-
-      const grid = new Uint8Array(sw * sh);
-      for (let i = 0; i < sw * sh; i++) {
-        grid[i] = data[i * 4 + 3] > 15 ? 1 : 0;
-      }
-
-      const dilated = new Uint8Array(sw * sh);
-      const targetDilationPixels = 2; // Precise grouping
-      const radius = Math.max(0, Math.round(targetDilationPixels * scale));
-      
-      for (let y = 0; y < sh; y++) {
-        for (let x = 0; x < sw; x++) {
-          if (grid[y * sw + x] === 1) {
-            if (radius === 0) {
-              dilated[y * sw + x] = 1;
-              continue;
-            }
-            for (let dy = -radius; dy <= radius; dy++) {
-              for (let dx = -radius; dx <= radius; dx++) {
-                const nx = x + dx;
-                const ny = y + dy;
-                if (nx >= 0 && nx < sw && ny >= 0 && ny < sh) {
-                  if (dx * dx + dy * dy <= radius * radius) {
-                    dilated[ny * sw + nx] = 1;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-
-      const visited = new Uint8Array(sw * sh);
-      const bboxes: BBox[] = [];
-
-      for (let y = 0; y < sh; y++) {
-        for (let x = 0; x < sw; x++) {
-          const idx = y * sw + x;
-          if (dilated[idx] === 1 && !visited[idx]) {
-            const queue: [number, number][] = [[x, y]];
-            visited[idx] = 1;
-            let minX = x, maxX = x, minY = y, maxY = y;
-
-            let head = 0;
-            while (head < queue.length) {
-              const [cx, cy] = queue[head++];
-              if (cx < minX) minX = cx;
-              if (cx > maxX) maxX = cx;
-              if (cy < minY) minY = cy;
-              if (cy > maxY) maxY = cy;
-
-              const neighbors = [
-                [cx + 1, cy],
-                [cx - 1, cy],
-                [cx, cy + 1],
-                [cx, cy - 1]
-              ];
-              for (const [nx, ny] of neighbors) {
-                if (nx >= 0 && nx < sw && ny >= 0 && ny < sh) {
-                  const nidx = ny * sw + nx;
-                  if (dilated[nidx] === 1 && !visited[nidx]) {
-                    visited[nidx] = 1;
-                    queue.push([nx, ny]);
-                  }
-                }
-              }
-            }
-
-            const pad = 4;
-            const origMinX = Math.max(0, Math.floor(minX / scale) - pad);
-            const origMinY = Math.max(0, Math.floor(minY / scale) - pad);
-            const origMaxX = Math.min(width - 1, Math.ceil(maxX / scale) + pad);
-            const origMaxY = Math.min(height - 1, Math.ceil(maxY / scale) + pad);
-
-            const origW = origMaxX - origMinX + 1;
-            const origH = origMaxY - origMinY + 1;
-
-            if (origW >= 20 && origH >= 20) {
-              bboxes.push({ minX: origMinX, minY: origMinY, maxX: origMaxX, maxY: origMaxY });
-            }
-          }
-        }
-      }
-
-      const stickerUrls: string[] = [];
-      bboxes.forEach(box => {
-        const w = box.maxX - box.minX + 1;
-        const h = box.maxY - box.minY + 1;
-
-        const cropCanvas = document.createElement('canvas');
-        cropCanvas.width = w;
-        cropCanvas.height = h;
-        const cropCtx = cropCanvas.getContext('2d');
-        if (cropCtx) {
-          cropCtx.drawImage(
-            canvas,
-            box.minX, box.minY, w, h,
-            0, 0, w, h
-          );
-
-          // Add clean white outline (die-cut look) if selected
-          let finalCanvas = cropCanvas;
-          if (addBorder) {
-            finalCanvas = addWhiteOutline(cropCanvas, borderSize);
-          }
-          
-          stickerUrls.push(finalCanvas.toDataURL('image/png'));
-        }
-      });
-
-      resolve(stickerUrls.length > 0 ? stickerUrls : [canvas.toDataURL('image/png')]);
-    });
-  };
-
-  const resolvePinterestUrl = async (url: string): Promise<string> => {
-    // If it's already a direct image URL, return it
+  const resolvePinterestUrl = async (url: string): Promise<string | null> => {
     if (/\.(jpeg|jpg|gif|png|webp)($|\?)/i.test(url)) {
       return url;
     }
 
-    // If it's a pinterest page or short link, fetch the page to extract the image
     if (url.includes('pinterest.com') || url.includes('pin.it') || url.includes('pinimg.com')) {
-      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-      const response = await fetch(proxyUrl);
-      const html = await response.text();
-      
-      // Extract og:image meta tag
-      const ogMatch = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i) ||
-                      html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:image["']/i);
-      if (ogMatch && ogMatch[1]) {
-        return ogMatch[1];
+      try {
+        const proxyUrl = `${CORS_PROXY}${encodeURIComponent(url)}`;
+        const response = await fetch(proxyUrl);
+        const html = await response.text();
+        const ogMatch = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i) ||
+                        html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:image["']/i);
+        if (ogMatch && ogMatch[1]) {
+          return ogMatch[1];
+        }
+        return null;
+      } catch {
+        return null;
       }
     }
-    
+
     return url;
   };
 
   const handleFiles = (files: FileList | File[]) => {
+    const maxSize = 20 * 1024 * 1024;
+    const warnSize = 10 * 1024 * 1024;
+    for (const file of files) {
+      if (file.size > maxSize) {
+        ToastManager.add({ type: 'error', message: `"${file.name}" is too large (max 20MB).` });
+        return;
+      }
+      if (file.size > warnSize) {
+        ToastManager.add({ type: 'info', message: `"${file.name}" is large — processing may be slow.` });
+      }
+    }
     const newStickers: Sticker[] = Array.from(files).map(file => {
       const id = Math.random().toString(36).substr(2, 9);
       const src = URL.createObjectURL(file);
@@ -360,11 +127,16 @@ export const StickerMakerTool: React.FC = () => {
     
     const url = linkInput.trim();
     setIsFetchingLink(true);
-    ToastManager.add({ type: 'info', message: 'Resolving Pinterest link...' });
+    ToastManager.add({ type: 'info', message: 'Fetching image from URL...' });
 
     try {
       const resolvedUrl = await resolvePinterestUrl(url);
-      const finalUrl = `https://corsproxy.io/?${encodeURIComponent(resolvedUrl)}`;
+      if (!resolvedUrl) {
+        ToastManager.add({ type: 'error', message: 'Could not fetch image from this URL. Try uploading the file directly.' });
+        return;
+      }
+
+      const finalUrl = `${CORS_PROXY}${encodeURIComponent(resolvedUrl)}`;
       
       const id = Math.random().toString(36).substr(2, 9);
       const newSticker: Sticker = { 
@@ -377,76 +149,115 @@ export const StickerMakerTool: React.FC = () => {
       
       setStickers(prev => [...prev, newSticker]);
       setLinkInput('');
-      ToastManager.add({ type: 'success', message: 'Image loaded from Pinterest!' });
-    } catch(err) {
-      console.error(err);
-      ToastManager.add({ type: 'error', message: 'Failed to resolve Pinterest image.' });
+      ToastManager.add({ type: 'success', message: 'Image loaded!' });
+    } catch {
+      ToastManager.add({ type: 'error', message: 'Failed to load image. Try uploading the file directly.' });
     } finally {
       setIsFetchingLink(false);
     }
+  };
+
+  const processWithConcurrency = async <T,>(
+    items: T[],
+    processor: (item: T) => Promise<void>,
+    concurrency: number
+  ): Promise<void> => {
+    const iter = items[Symbol.iterator]();
+    const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+      for (;;) {
+        const { value, done } = iter.next();
+        if (done || !isProcessingRef.current) break;
+        await processor(value);
+      }
+    });
+    await Promise.all(workers);
   };
 
   const executeStickerCreation = async () => {
     const pendingStickers = stickers.filter(s => s.status === 'pending');
     if (pendingStickers.length === 0) return;
 
+    isProcessingRef.current = true;
     setIsProcessing(true);
     setProgressPct(0);
-    setProgressLabel('Initializing AI Models...');
+    setProgressLabel('Generating stickers...');
+
+    setStickers(prev => prev.map(s =>
+      s.status === 'pending' ? { ...s, status: 'processing' } : s
+    ));
 
     let completedCount = 0;
-    const processedItems: Sticker[] = [];
+    const totalPending = pendingStickers.length;
 
-    try {
-      for (const sticker of stickers) {
-        if (sticker.status !== 'pending') {
-          processedItems.push(sticker);
-          continue;
+    await processWithConcurrency(
+      pendingStickers,
+      async (sticker) => {
+        if (!isProcessingRef.current) return;
+
+        try {
+          const config: Config = {
+            progress: (key, _current, _total) => {
+              setProgressLabel(`Loading Model: ${key}`);
+            }
+          };
+
+          const input = await getResizedBlob(sticker.originalSrc);
+          const blob = await removeBackground(input, config);
+          if (!isProcessingRef.current) return;
+
+          const imgUrl = URL.createObjectURL(blob);
+          const img = await loadImage(imgUrl);
+          const segmentedUrls = await segmentStickers(img, addBorder, borderSize);
+          URL.revokeObjectURL(imgUrl);
+
+          const results: Sticker[] = segmentedUrls.map((url, idx) => ({
+            id: `${sticker.id}-${idx}`,
+            originalSrc: sticker.originalSrc,
+            processedSrc: url,
+            selected: true,
+            status: 'done' as const
+          }));
+
+          setStickers(prev => {
+            const next = prev.filter(s => s.id !== sticker.id);
+            return [...next, ...results];
+          });
+        } catch (error) {
+          console.error(`Sticker ${sticker.id} failed:`, error);
+          setStickers(prev => prev.map(s =>
+            s.id === sticker.id ? { ...s, status: 'error' } : s
+          ));
+        } finally {
+          completedCount++;
+          setProgressPct(Math.round((completedCount / totalPending) * 100));
         }
+      },
+      CONCURRENCY
+    );
 
-        setProgressLabel(`Removing background...`);
-        const config: Config = {
-          progress: (key, current, total) => {
-            setProgressLabel(`Loading Model: ${key}`);
-            setProgressPct(Math.round((current / total) * 100));
-          }
-        };
-
-        const blob = await removeBackground(sticker.originalSrc, config);
-        
-        setProgressLabel(`Segmenting elements...`);
-        const imgUrl = URL.createObjectURL(blob);
-        const img = await loadImage(imgUrl);
-        const segmentedUrls = await segmentStickers(img);
-        URL.revokeObjectURL(imgUrl);
-
-        const newElements: Sticker[] = segmentedUrls.map((url, idx) => ({
-          id: `${sticker.id}-${idx}`,
-          originalSrc: sticker.originalSrc,
-          processedSrc: url,
-          selected: true,
-          status: 'done'
-        }));
-
-        processedItems.push(...newElements);
-        completedCount++;
-        setProgressPct(Math.round((completedCount / pendingStickers.length) * 100));
-      }
-
-      setStickers(processedItems);
-      ToastManager.add({ type: 'success', message: 'Stickers generated successfully!' });
-    } catch (error) {
-      console.error('Sticker generation failed:', error);
-      ToastManager.add({ type: 'error', message: 'Failed to generate stickers' });
-    } finally {
-      setIsProcessing(false);
-      setProgressLabel('');
-      setProgressPct(0);
+    if (!isProcessingRef.current) {
+      setStickers(prev => prev.map(s =>
+        s.status === 'processing' ? { ...s, status: 'error' } : s
+      ));
     }
+
+    isProcessingRef.current = false;
+    setIsProcessing(false);
+    setProgressLabel('');
+    setProgressPct(0);
+    ToastManager.add({ type: 'success', message: 'Stickers generated!' });
   };
 
   const toggleSelect = (id: string) => {
     setStickers(prev => prev.map(s => s.id === id ? { ...s, selected: !s.selected } : s));
+  };
+
+  const selectAll = () => {
+    setStickers(prev => prev.map(s => s.status === 'done' ? { ...s, selected: true } : s));
+  };
+
+  const deselectAll = () => {
+    setStickers(prev => prev.map(s => s.status === 'done' ? { ...s, selected: false } : s));
   };
 
   const removeSticker = (id: string) => {
@@ -511,29 +322,11 @@ export const StickerMakerTool: React.FC = () => {
     }
   };
 
-  const convertToWebP = (blob: Blob): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return reject(new Error('no context'));
-        ctx.drawImage(img, 0, 0);
-        canvas.toBlob(b => {
-          if (b) resolve(b);
-          else reject(new Error('blob conversion failed'));
-        }, 'image/webp', 0.9);
-      };
-      img.onerror = reject;
-      img.src = URL.createObjectURL(blob);
-    });
-  };
 
-  const hasProcessed = stickers.some(s => s.status === 'done');
-  const selectedCount = stickers.filter(s => s.selected && s.status === 'done').length;
-  const pendingCount = stickers.filter(s => s.status === 'pending').length;
+
+  const hasProcessed = useMemo(() => stickers.some(s => s.status === 'done'), [stickers]);
+  const selectedCount = useMemo(() => stickers.filter(s => s.selected && s.status === 'done').length, [stickers]);
+  const pendingCount = useMemo(() => stickers.filter(s => s.status === 'pending').length, [stickers]);
 
   return (
     <div className="lg-shell">
@@ -567,6 +360,12 @@ export const StickerMakerTool: React.FC = () => {
                 onDrop={(e) => {
                   e.preventDefault();
                   if (e.dataTransfer.files) handleFiles(e.dataTransfer.files);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    fileInputRef.current?.click();
+                  }
                 }}
               >
                 <input 
@@ -644,19 +443,31 @@ export const StickerMakerTool: React.FC = () => {
             </section>
 
             {/* ── 4. ACTIONS ── */}
-            {pendingCount > 0 && (
+            {(pendingCount > 0 || isProcessing) && (
               <section className="lg-section">
                 <p className="lg-section__label">Sticker Creation</p>
-                <button
-                  type="button"
-                  onClick={executeStickerCreation}
-                  disabled={isProcessing}
-                  className="w-full bg-accent text-on-accent border-none py-2.5 font-bold cursor-pointer hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2 pixel-btn"
-                  style={{ borderRadius: '6px', fontSize: '12px' }}
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Generate Stickers ({pendingCount})
-                </button>
+                {isProcessing ? (
+                  <button
+                    type="button"
+                    onClick={() => { isProcessingRef.current = false; }}
+                    className="w-full bg-red-600 text-white border-none py-2.5 font-bold cursor-pointer flex items-center justify-center gap-2 pixel-btn"
+                    style={{ borderRadius: '6px', fontSize: '12px' }}
+                  >
+                    <XCircle className="w-4 h-4" />
+                    Cancel Processing
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={executeStickerCreation}
+                    disabled={pendingCount === 0}
+                    className="w-full bg-accent text-on-accent border-none py-2.5 font-bold cursor-pointer hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2 pixel-btn"
+                    style={{ borderRadius: '6px', fontSize: '12px' }}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Generate Stickers ({pendingCount})
+                  </button>
+                )}
               </section>
             )}
 
@@ -705,9 +516,14 @@ export const StickerMakerTool: React.FC = () => {
                       </>
                     )}
                   </span>
-                  <span className="lp-stats__hint">
-                    {hasProcessed ? 'Click cards to toggle inclusion' : 'Click "Generate Stickers" in the sidebar'}
-                  </span>
+                  {hasProcessed ? (
+                    <div className="flex items-center gap-2">
+                      <button onClick={selectAll} className="lp-stats__action">Select All</button>
+                      <button onClick={deselectAll} className="lp-stats__action">Deselect All</button>
+                    </div>
+                  ) : (
+                    <span className="lp-stats__hint">Click "Generate Stickers" in the sidebar</span>
+                  )}
                 </div>
                 
                 <div className="lp-cards">
