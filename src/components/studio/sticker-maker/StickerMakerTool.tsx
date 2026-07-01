@@ -1,6 +1,5 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { removeBackground, Config } from '@imgly/background-removal';
 import { downloadZip } from 'client-zip';
 import FloatingHeader from '../../ui/floating-header';
 import ProgressBar from '../../ProgressBar';
@@ -58,19 +57,19 @@ export const StickerMakerTool: React.FC = () => {
   const CONCURRENCY = 2;
   const MAX_IMAGE_SIZE = 2000;
 
-  const getResizedBlob = async (src: string): Promise<Blob | string> => {
+  const getResizedImage = async (src: string): Promise<HTMLImageElement> => {
     const img = await loadImage(src);
     if (img.width <= MAX_IMAGE_SIZE && img.height <= MAX_IMAGE_SIZE) {
-      return src;
+      return img;
     }
     const canvas = document.createElement('canvas');
     const scale = Math.min(MAX_IMAGE_SIZE / img.width, MAX_IMAGE_SIZE / img.height);
     canvas.width = Math.round(img.width * scale);
     canvas.height = Math.round(img.height * scale);
     const ctx = canvas.getContext('2d');
-    if (!ctx) return src;
+    if (!ctx) return img;
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    return new Promise(resolve => canvas.toBlob(b => resolve(b || new Blob())));
+    return loadImage(canvas.toDataURL('image/png'));
   };
 
   const CORS_PROXY = 'https://corsproxy.io/?';
@@ -195,20 +194,10 @@ export const StickerMakerTool: React.FC = () => {
         if (!isProcessingRef.current) return;
 
         try {
-          const config: Config = {
-            progress: (key, _current, _total) => {
-              setProgressLabel(`Loading Model: ${key}`);
-            }
-          };
-
-          const input = await getResizedBlob(sticker.originalSrc);
-          const blob = await removeBackground(input, config);
+          const img = await getResizedImage(sticker.originalSrc);
           if (!isProcessingRef.current) return;
 
-          const imgUrl = URL.createObjectURL(blob);
-          const img = await loadImage(imgUrl);
           const segmentedUrls = await segmentStickers(img, addBorder, borderSize);
-          URL.revokeObjectURL(imgUrl);
 
           const results: Sticker[] = segmentedUrls.map((url, idx) => ({
             id: `${sticker.id}-${idx}`,
