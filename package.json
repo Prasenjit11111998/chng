@@ -22,6 +22,7 @@
     "@fontsource/lexend": "^5.2.11",
     "@fontsource/radio-canada-big": "^5.2.7",
     "@imagemagick/magick-wasm": "^0.0.37",
+    "@imgly/background-removal": "^1.7.0",
     "@radix-ui/react-dialog": "^1.1.16",
     "@radix-ui/react-label": "^2.1.9",
     "@radix-ui/react-progress": "^1.1.9",

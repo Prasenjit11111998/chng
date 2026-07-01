@@ -27,6 +27,7 @@ const BrandGuidelinesWizard = lazy(() => import('./components/studio/brand-guide
 const LogoGridTool = lazy(() => import('./components/studio/logo-grid/LogoGridTool'));
 const MockupTool = lazy(() => import('./components/studio/mockup-generator/MockupTool'));
 const LogoPackTool = lazy(() => import('./components/studio/logo-pack/LogoPackTool'));
+const StickerMakerTool = lazy(() => import('./components/studio/sticker-maker/StickerMakerTool'));
 
 import './lib/css/app.scss';
 
@@ -281,6 +282,14 @@ export const App: React.FC = () => {
         element={
           <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-foreground font-mono text-sm">Loading Logo Pack...</div>}>
             <LogoPackTool />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/studio/sticker-maker"
+        element={
+          <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-foreground font-mono text-sm">Loading Sticker Maker...</div>}>
+            <StickerMakerTool />
           </Suspense>
         }
       />

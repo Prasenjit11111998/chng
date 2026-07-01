@@ -33,6 +33,13 @@ const STUDIO_TOOLS = [
     route: '/studio/logo-pack',
   },
   {
+    id: 'sticker-maker',
+    name: 'Sticker Maker',
+    description: 'Upload images or paste Pinterest links to automatically extract subjects and download transparent stickers.',
+    status: 'available' as const,
+    route: '/studio/sticker-maker',
+  },
+  {
     id: 'presentation',
     name: 'Presentations',
     description: 'Build slide templates in seconds.',

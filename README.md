@@ -85,6 +85,14 @@ One-click export of every logo asset a project needs — packaged as a productio
 - **Interactive contrast controls**: a quick-toggle toolbar (Auto/Light/Dark) to inspect transparency against different surfaces.
 - **Progress bar**: specific step messages during ZIP generation.
 
+#### Sticker Maker ✦ New
+Upload images or paste Pinterest links to automatically extract subjects and download them as transparent stickers.
+- **Client-Side AI Processing**: Powered by `@imgly/background-removal`, utilizing an ONNX WASM model entirely locally. No backend needed, ensuring total privacy.
+- **Pinterest Link Fetching**: Built-in CORS proxying to instantly fetch imagery directly from Pinterest links.
+- **Interactive Review Grid**: Review generated stickers on a transparent checkered background and click to deselect any you don't wish to keep.
+- **Format Options**: Export as transparent `PNG` or optimized `WEBP`.
+- **ZIP Packaging**: Downloads your curated stickers instantly as a single `.zip` archive.
+
 ---
 
 ## 🏗 Architecture
